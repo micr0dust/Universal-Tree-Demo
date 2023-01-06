@@ -204,7 +204,7 @@ void CUniversalDemoView::OnDraw(CDC* /*pDC*/)
 		}
 	}
 	else if (display == 2)
-		fractalTree(&MemDC, 0, CPoint(currentPos.x + nWidth / 2.0, currentPos.y + nHeight / 2.0), -90, 1);
+		fractalTree(&MemDC, 0, CPoint(currentPos.x + nWidth / 2.0, currentPos.y + nHeight / 2.0), 30, 1);
 	else if (display == 3)
 		carpet(&MemDC, 0, currentPos.x + nWidth / 2.0, currentPos.y + nHeight / 2.0, scale);
 	else if (display == 4)
@@ -318,8 +318,6 @@ vector<SortFmt> CUniversalDemoView::initialize(CString input, string delimStr, i
 		for (string i : splited)
 			if (!mode)
 				sortData.push_back({ (int)i[0], i});
-			else if (mode == 1)
-				sortData.push_back({ (i[0] - 'A') * 1000 + (200 - std::stoll(i.substr(1, 3))) ,i });
 	}
 	else if (multinput.size() >= 2)
 	{
