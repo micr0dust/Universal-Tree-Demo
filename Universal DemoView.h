@@ -302,13 +302,35 @@ class tree234
             displayAsRBT(treeNode->M2, abs(y) + 1);
         }
     }
+    void deleteTree(Node4* treeNode)
+    {
+        if (!treeNode)
+            return;
+
+        Node4* curTreeNode = treeNode;
+        Node4* M1 = treeNode->M1;
+        Node4* M2 = treeNode->M2;
+        Node4* M3 = treeNode->M3;
+        Node4* M4 = treeNode->M4;
+        delete(curTreeNode);
+        deleteTree(M1);
+        deleteTree(M2);
+        deleteTree(M3);
+        deleteTree(M4);
+    }
 public:
     vector<SortFmt> result;
     Node4* _root;
     tree234()
     {
         _root = NULL;
+        stepByStep = false;
     }; // constructor
+    ~tree234()
+    {
+        deleteTree();
+        result.clear();
+    }
     void insert(SortFmt key) {
         do
         {
@@ -319,8 +341,13 @@ public:
     }
     void buildTree(vector<SortFmt> data) {
         for (SortFmt item : data)
+        {
+            if (stepByStep)
+                preLocateNodes();
             insert(item);
+        }
     }
+    void deleteTree() { deleteTree(_root); }
     void preLocateNodes() { preLocateNodes(_root, 0); }
     void displayAsRBT() { displayAsRBT(_root, 0); }
     int getNodesMount(Node4* treeNode)
@@ -338,6 +365,8 @@ public:
             count += getNodesMount(treeNode->M4);
         return count + 1;
     }
+
+    bool stepByStep;
 };
 class BST {
 private:
@@ -501,6 +530,7 @@ public:
     BST()
     {
         enableAVL = false;
+        stepByStep = false;
         _root = NULL;
     }
     ~BST()
@@ -565,11 +595,16 @@ public:
 	void preLocateNodes() { preLocateNodes(_root, 0); }
     void buildTree(vector<SortFmt> data) {
         for (SortFmt item : data)
+        {
+            if (stepByStep)
+                preLocateNodes();
             insert(item);
+        }
     }
 
 	// setting
 	bool enableAVL;
+    bool stepByStep;
 };
 class CUniversalDemoView : public CView
 {
@@ -625,6 +660,8 @@ public:
 	bool enableAVL;
 	bool enableTree234;
     bool enableRBT;
+    bool cover;
+    bool stepByStep;
     int display;
     int scale;
     int limitScale;
@@ -646,7 +683,6 @@ public:
 	afx_msg void preorderToTree();
 	afx_msg void postorderToTree();
 	afx_msg void OnAvl();
-	afx_msg void OnOrder();
 	afx_msg void On234tree();
 	void fractalTree(CDC* MemDC, int layer, CPoint pos, double angle, double cum);
     void carpet(CDC* MemDC, int layer, double x, double y, double div);
@@ -658,6 +694,9 @@ public:
     afx_msg void OnSearch();
     afx_msg void OnDelete();
     afx_msg void OnRbt();
+    afx_msg void OnCuttree();
+    afx_msg void OnCover();
+    afx_msg void OnStepbystep();
 };
 
 #ifndef _DEBUG  // 對 Universal DemoView.cpp 中的版本進行偵錯
