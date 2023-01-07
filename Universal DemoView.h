@@ -260,10 +260,10 @@ class tree234
             return;
 
         if (treeNode->key3.val) {
-            int M1s = getNodesMount(treeNode->M1);
-            int M2s = getNodesMount(treeNode->M2);
-            int M3s = getNodesMount(treeNode->M3);
-            int M4s = getNodesMount(treeNode->M4);
+            int M1s = getRBTNodesMount(treeNode->M1);
+            int M2s = getRBTNodesMount(treeNode->M2);
+            int M3s = getRBTNodesMount(treeNode->M3);
+            int M4s = getRBTNodesMount(treeNode->M4);
             displayAsRBT(treeNode->M1, -(abs(y) + 2));
             int parentX = result.size() + M2s + 1;
             result.push_back({ -(abs(y) + 1),treeNode->key1.str,parentX,true });
@@ -278,9 +278,9 @@ class tree234
             displayAsRBT(treeNode->M4, abs(y) + 2);
         }
         else if (treeNode->key2.val) {
-            int M1s = getNodesMount(treeNode->M1);
-            int M2s = getNodesMount(treeNode->M2);
-            int M3s = getNodesMount(treeNode->M3);
+            int M1s = getRBTNodesMount(treeNode->M1);
+            int M2s = getRBTNodesMount(treeNode->M2);
+            int M3s = getRBTNodesMount(treeNode->M3);
             displayAsRBT(treeNode->M1, -(abs(y) + 2));
             int parentX = result.size() + M3s + 1;
             result.push_back({ -(abs(y) + 1),treeNode->key1.str,parentX,true });
@@ -292,8 +292,8 @@ class tree234
             displayAsRBT(treeNode->M3, abs(y) + 1);
         }
         else {
-            int M1s = getNodesMount(treeNode->M1);
-            int M2s = getNodesMount(treeNode->M2);
+            int M1s = getRBTNodesMount(treeNode->M1);
+            int M2s = getRBTNodesMount(treeNode->M2);
             displayAsRBT(treeNode->M1, -(abs(y) + 1));
             int parentX = (y > 0 ?
                 result.size() - M1s - 1 :
@@ -325,6 +325,7 @@ public:
     {
         _root = NULL;
         stepByStep = false;
+        RBT = false;
     }; // constructor
     ~tree234()
     {
@@ -343,7 +344,10 @@ public:
         for (SortFmt item : data)
         {
             if (stepByStep)
-                preLocateNodes();
+                if (RBT)
+                    displayAsRBT();
+                else
+                    preLocateNodes();
             insert(item);
         }
     }
@@ -365,8 +369,24 @@ public:
             count += getNodesMount(treeNode->M4);
         return count + 1;
     }
+    int getRBTNodesMount(Node4* treeNode)
+    {
+        if (!treeNode)
+            return NULL;
+        int count = 0;
+        if (treeNode->M1)
+            count += getNodesMount(treeNode->M1);
+        if (treeNode->M2)
+            count += getNodesMount(treeNode->M2);
+        if (treeNode->M3)
+            count += getNodesMount(treeNode->M3);
+        if (treeNode->M4)
+            count += getNodesMount(treeNode->M4);
+        return count + 1;
+    }
 
     bool stepByStep;
+    bool RBT;
 };
 class BST {
 private:
@@ -402,13 +422,13 @@ private:
 
         return treeNode;
     }
-    Node* remove(Node* root, char key)
+    Node* remove(Node* root, long long key)
     {
         if (!root)
             return root;
-        if (key < root->data.str[0])
+        if (key < root->data.val)
             root->left = remove(root->left, key);
-        else if (key > root->data.str[0])
+        else if (key > root->data.val)
             root->right = remove(root->right, key);
         else {
             if (!root->left && !root->right)
@@ -425,7 +445,7 @@ private:
             }
             Node* alter = getMinNode(root->right);
             root->data = alter->data;
-            root->right = remove(root->right, alter->data.str[0]);
+            root->right = remove(root->right, alter->data.val);
         }
         return root;
     }
@@ -515,15 +535,15 @@ private:
             count += nodesMount(treeNode->right);
         return count + 1;
     }
-    void search(Node* treeNode, char c)
+    void search(Node* treeNode, long long query)
     {
         if (!treeNode)
             return;
-        if(treeNode->data.str[0] == c)
+        if(treeNode->data.val == query)
             treeNode->data.mark = true;
-        if (c <= treeNode->data.str[0])
-            search(treeNode->left, c);
-        else search(treeNode->right, c);
+        if (query <= treeNode->data.val)
+            search(treeNode->left, query);
+        else search(treeNode->right, query);
     }
 public:
 	vector<SortFmt> result;
@@ -540,10 +560,10 @@ public:
     }
 
     void insert(SortFmt data) { _root = insert(_root, data); }
-    void remove(char c) { 
+    void remove(long long value) { 
         Node* pointerNode = new Node();
         pointerNode->right = _root;
-        _root = remove(pointerNode, c)->right;
+        _root = remove(pointerNode, value)->right;
         delete(pointerNode);
     }
 
@@ -551,7 +571,7 @@ public:
 	int rightLength(Node* treeNode) { return rightLen(treeNode); };
 	int leftLength(Node* treeNode) { return rightLen(treeNode); };
 	int getNodesMount(Node* treeNode) { return nodesMount(treeNode); };
-    void search(char c) { search(_root,c); };
+    void search(long long query) { search(_root, query); };
 
     Node* getMaxNode(Node* treeNode)
     {
@@ -666,6 +686,9 @@ public:
     int scale;
     int limitScale;
     double angle;
+    vector<SortFmt> preorder;
+    vector<SortFmt> inorder;
+    vector<SortFmt> postorder;
 
 	afx_msg BOOL OnMouseWheel(UINT nFlags, short zDelta, CPoint pt);
 	afx_msg BOOL OnEraseBkgnd(CDC* pDC);
@@ -697,6 +720,7 @@ public:
     afx_msg void OnCuttree();
     afx_msg void OnCover();
     afx_msg void OnStepbystep();
+    afx_msg void OnRefresh();
 };
 
 #ifndef _DEBUG  // 對 Universal DemoView.cpp 中的版本進行偵錯

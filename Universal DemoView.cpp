@@ -61,6 +61,7 @@ BEGIN_MESSAGE_MAP(CUniversalDemoView, CView)
 	ON_COMMAND(ID_CUTTREE, &CUniversalDemoView::OnCuttree)
 	ON_COMMAND(ID_COVER, &CUniversalDemoView::OnCover)
 	ON_COMMAND(ID_STEPBYSTEP, &CUniversalDemoView::OnStepbystep)
+	ON_COMMAND(ID_REFRESH, &CUniversalDemoView::OnRefresh)
 END_MESSAGE_MAP()
 
 // CUniversalDemoView 建構/解構
@@ -140,7 +141,9 @@ void CUniversalDemoView::OnDraw(CDC* /*pDC*/)
 	const int R = scale;
 	int interval = scale + scale / 10;
 
-	if (enableTree234)
+	if (enableTree234 && enableRBT)
+		MemDC.TextOut(0, nHeight - 20, L"Red-black Tree from 234-tree");
+	else if (enableTree234)
 		MemDC.TextOut(0, nHeight - 20, L"234 Tree");
 	if (enableAVL&&!enableTree234)
 		MemDC.TextOut(0, nHeight - 20, L"AVL balance");
@@ -162,7 +165,7 @@ void CUniversalDemoView::OnDraw(CDC* /*pDC*/)
 	if (display == 0)
 	{
 		int intervalY = interval * 3 / 2;
-		if (enableTree234) 
+		if (enableTree234 && !enableRBT) 
 			interval += scale * 2;
 		
 		CPen red(PS_SOLID, 0, RGB(255, 0, 0));
@@ -202,6 +205,24 @@ void CUniversalDemoView::OnDraw(CDC* /*pDC*/)
 			CString cs(finalData[i].str.c_str());
 			MemDC.TextOut(currentPos.x + i * interval + R / 4, currentPos.y + abs(finalData[i].val) * intervalY + R / 4, cs);
 		}
+		string preorderStr = "Preorder: ";
+		string inorderStr = "Inorder: ";
+		string postorderStr = "Postorder: ";
+		for (int i = 0; i < preorder.size(); i++)
+			preorderStr += preorder[i].str + (i + 1 == preorder.size() ? "" : " -> ");
+		for (int i = 0; i < inorder.size(); i++)
+			inorderStr += inorder[i].str + (i + 1 == inorder.size() ? "" : " -> ");
+		for (int i = 0; i < postorder.size(); i++)
+			postorderStr += postorder[i].str + (i + 1 == postorder.size() ? "" : " -> ");
+		CString precs(preorderStr.c_str());
+		if(preorder.size())
+		MemDC.TextOut(currentPos.x, currentPos.y -120, precs);
+		CString incs(inorderStr.c_str());
+		if (inorder.size())
+		MemDC.TextOut(currentPos.x, currentPos.y -80, incs);
+		CString postcs(postorderStr.c_str());
+		if (postorder.size())
+		MemDC.TextOut(currentPos.x, currentPos.y -40, postcs);
 	}
 	else if (display == 2)
 		fractalTree(&MemDC, 0, CPoint(currentPos.x + nWidth / 2.0, currentPos.y + nHeight / 2.0), 30, 1);
@@ -212,6 +233,10 @@ void CUniversalDemoView::OnDraw(CDC* /*pDC*/)
 		snowflake(&MemDC, limitScale, currentPos.x+15/10* scale, currentPos.y+ 2 / 10 * scale, currentPos.x + 2 / 10 * scale, currentPos.y + 28 / 10 * scale);
 		snowflake(&MemDC, limitScale, currentPos.x + 28 / 10 * scale, currentPos.y + 28 / 10 * scale, currentPos.x + 15 / 10 * scale, currentPos.y + 2 / 10 * scale);
 		snowflake(&MemDC, limitScale, currentPos.x + 2 / 10 * scale, currentPos.y + 28 / 10 * scale, currentPos.x + 28 / 10 * scale, currentPos.y + 28 / 10 * scale);
+		string limit = "limite: ";
+		limit += ((char)(limitScale)+'0');
+		CString limitcs(limit.c_str());
+		MemDC.TextOut(nWidth - 300, nHeight - 40, limitcs);
 	}
 
 		
@@ -316,20 +341,20 @@ vector<SortFmt> CUniversalDemoView::initialize(CString input, string delimStr, i
 		splited = multiSplit(inputStr, delim);
 
 		for (string i : splited)
-			if (!mode)
-				sortData.push_back({ (int)i[0], i});
+			if(i[0])
+				sortData.push_back({ stoll(i), i});
 	}
 	else if (multinput.size() >= 2)
 	{
-		int weight[26] = { 0 };
+		int weight[10000] = { 0 };
 		bool isPreorder = mode & 1;
 		if (!isPreorder) reverse(multinput[0].begin(), multinput[0].end());
 		vector<string> insertorder = multiSplit(multinput[0], delim);
 		vector<string> inorder = multiSplit(multinput[1], delim);
 		for (int i = 0; i < inorder.size(); i++)
-			weight[inorder[i][0] - 'A'] = i;
+			weight[stoi(inorder[i])] = i;
 		for (int i = 0; i < insertorder.size(); i++)
-			sortData.push_back({ weight[insertorder[i][0] - 'A'], insertorder[i] });
+			sortData.push_back({ weight[stoi(insertorder[i])], insertorder[i] });
 	}
 
 	return sortData;
@@ -403,15 +428,7 @@ void CUniversalDemoView::OnKeyDown(UINT nChar, UINT nRepCnt, UINT nFlags)
 		if (limitScale > 0)
 			limitScale -= 1;
 	if ((nChar == 'R' || nChar == 'r') && VK_CONTROL)
-	{
-		currentPos.x = 0;
-		currentPos.y = 0;
-		originPos = currentPos;
-		scale = 50;
-		limitScale = 3;
-		T234 = tree234();
-		tree = BST();
-	}
+		return OnRefresh();
 	if ((nChar == 'F' || nChar == 'f') && VK_CONTROL)
 		OnSearch();
 	if ((nChar == 'A' || nChar == 'a') && VK_CONTROL)
@@ -495,6 +512,9 @@ void CUniversalDemoView::preorderToTree()
 	CInput inputBox;
 	if (inputBox.DoModal() != IDOK) return;
 	display = 0;
+	preorder.clear();
+	inorder.clear();
+	postorder.clear();
 
 	vector<SortFmt> sortData;
 	sortData = initialize(inputBox.InputStr, ",", 1);
@@ -514,6 +534,15 @@ void CUniversalDemoView::preorderToTree()
 		tree.buildTree(sortData);
 		tree.preLocateNodes();
 		finalData = tree.result;
+		tree.result.clear();
+		tree.preOrder();
+		preorder = tree.result;
+		tree.result.clear();
+		tree.inOrder();
+		inorder = tree.result;
+		tree.result.clear();
+		tree.postOrder();
+		postorder = tree.result;
 	}
 	Invalidate();
 }
@@ -523,6 +552,9 @@ void CUniversalDemoView::postorderToTree()
 	CInput inputBox;
 	if (inputBox.DoModal() != IDOK) return;
 	display = 0;
+	preorder.clear();
+	inorder.clear();
+	postorder.clear();
 
 	vector<SortFmt> sortData;
 	sortData = initialize(inputBox.InputStr, ",", 0);
@@ -542,6 +574,15 @@ void CUniversalDemoView::postorderToTree()
 		tree.buildTree(sortData);
 		tree.preLocateNodes();
 		finalData = tree.result;
+		tree.result.clear();
+		tree.preOrder();
+		preorder = tree.result;
+		tree.result.clear();
+		tree.inOrder();
+		inorder = tree.result;
+		tree.result.clear();
+		tree.postOrder();
+		postorder = tree.result;
 	}
 	Invalidate();
 }
@@ -571,6 +612,9 @@ void CUniversalDemoView::OnInsert()
 	// TODO: 在此加入您的命令處理常式程式碼
 	CInput inputBox;
 	if (inputBox.DoModal() != IDOK) return;
+	preorder.clear();
+	inorder.clear();
+	postorder.clear();
 
 	vector<SortFmt> sortData;
 	sortData = initialize(inputBox.InputStr, ",", 0);
@@ -591,6 +635,15 @@ void CUniversalDemoView::OnInsert()
 		tree.buildTree(sortData);
 		tree.preLocateNodes();
 		finalData = tree.result;
+		tree.result.clear();
+		tree.preOrder();
+		preorder = tree.result;
+		tree.result.clear();
+		tree.inOrder();
+		inorder = tree.result;
+		tree.result.clear();
+		tree.postOrder();
+		postorder = tree.result;
 	}
 	Invalidate();
 }
@@ -603,18 +656,14 @@ void CUniversalDemoView::OnSearch()
 	vector<SortFmt> sortData;
 	sortData = initialize(inputBox.InputStr, ",", 0);
 	if (enableTree234) {
-		if(cover)
-			T234.result.clear();
-		display = 1;
-		T234.preLocateNodes();
-		finalData = T234.result;
+
 	}
 	else {
 		if (cover)
 			tree.result.clear();
 		display = 0;
 		for (SortFmt item : sortData)
-			tree.search(item.str[0]);
+			tree.search(item.val);
 		tree.preLocateNodes();
 		finalData = tree.result;
 	}
@@ -636,7 +685,7 @@ void CUniversalDemoView::OnDelete()
 			tree.result.clear();
 		display = 0;
 		for (SortFmt item : sortData)
-			tree.remove(item.str[0]);
+			tree.remove(item.val);
 		tree.preLocateNodes();
 		finalData = tree.result;
 	}
@@ -660,6 +709,7 @@ void CUniversalDemoView::OnRbt()
 {
 	if (!enableTree234) return;
 	enableRBT = !enableRBT;
+	T234.RBT = enableRBT;
 	T234.result.clear();
 	if (enableRBT)
 		T234.displayAsRBT();
@@ -671,6 +721,9 @@ void CUniversalDemoView::OnCuttree()
 {
 	tree.deleteBST();
 	T234.deleteTree();
+	preorder.clear();
+	inorder.clear();
+	postorder.clear();
 	tree = BST();
 	T234 = tree234();
 	tree.enableAVL = enableAVL;
@@ -689,5 +742,39 @@ void CUniversalDemoView::OnStepbystep()
 	stepByStep = !stepByStep;
 	tree.stepByStep = stepByStep;
 	T234.stepByStep = stepByStep;
+	Invalidate();
+}
+void CUniversalDemoView::OnRefresh()
+{
+	currentPos.x = 0;
+	currentPos.y = 0;
+	originPos = currentPos;
+	scale = 50;
+	limitScale = 3;
+	preorder.clear();
+	inorder.clear();
+	postorder.clear();
+	if (display == 0) 
+		if (enableTree234) {
+			T234.result.clear();
+			if (enableRBT)
+				T234.displayAsRBT();
+			else T234.preLocateNodes();
+			finalData = T234.result;
+		}
+		else {
+			tree.result.clear();
+			tree.preLocateNodes();
+			finalData = tree.result;
+			tree.result.clear();
+			tree.preOrder();
+			preorder = tree.result;
+			tree.result.clear();
+			tree.inOrder();
+			inorder = tree.result;
+			tree.result.clear();
+			tree.postOrder();
+			postorder = tree.result;
+		}
 	Invalidate();
 }
