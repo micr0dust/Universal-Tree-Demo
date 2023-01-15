@@ -341,8 +341,10 @@ vector<SortFmt> CUniversalDemoView::initialize(CString input, string delimStr, i
 		splited = multiSplit(inputStr, delim);
 
 		for (string i : splited)
-			if(i[0])
+			if(i[0] == '-' || (i[0] >= '0' && i[0] <= '9'))
 				sortData.push_back({ stoll(i), i});
+			else
+				sortData.push_back({ (int)i[0], i});
 	}
 	else if (multinput.size() >= 2)
 	{
@@ -351,10 +353,18 @@ vector<SortFmt> CUniversalDemoView::initialize(CString input, string delimStr, i
 		if (!isPreorder) reverse(multinput[0].begin(), multinput[0].end());
 		vector<string> insertorder = multiSplit(multinput[0], delim);
 		vector<string> inorder = multiSplit(multinput[1], delim);
-		for (int i = 0; i < inorder.size(); i++)
-			weight[stoi(inorder[i])] = i;
-		for (int i = 0; i < insertorder.size(); i++)
-			sortData.push_back({ weight[stoi(insertorder[i])], insertorder[i] });
+		if (inorder[0][0] == '-' || (inorder[0][0] >= '0' && inorder[0][0] <= '9')) {
+			for (int i = 0; i < inorder.size(); i++)
+				weight[stoi(inorder[i])] = i;
+			for (int i = 0; i < insertorder.size(); i++)
+				sortData.push_back({ weight[stoi(insertorder[i])], insertorder[i] });
+		}
+		else {
+			for (int i = 0; i < inorder.size(); i++)
+				weight[inorder[i][0]] = i;
+			for (int i = 0; i < insertorder.size(); i++)
+				sortData.push_back({ weight[inorder[i][0]], insertorder[i] });
+		}
 	}
 
 	return sortData;
