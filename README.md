@@ -60,3 +60,11 @@
 ### zoom
 
 ![zoom](https://github.com/micr0dust/Universal-Tree-Demo/blob/main/img/scale.png?raw=true"zoom")
+
+### graph with Prime's algorithm
+
+![Prime's algorithm](https://github.com/micr0dust/Universal-Tree-Demo/blob/main/img/prime.png?raw=true"Prime's-algorithm")
+
+### graph with Prime's algorithm
+
+![matrix chain multiplication](https://github.com/micr0dust/Universal-Tree-Demo/blob/main/img/mxproduct.png?raw=true"matrix-chain-multiplication")
