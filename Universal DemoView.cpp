@@ -62,6 +62,9 @@ BEGIN_MESSAGE_MAP(CUniversalDemoView, CView)
 	ON_COMMAND(ID_COVER, &CUniversalDemoView::OnCover)
 	ON_COMMAND(ID_STEPBYSTEP, &CUniversalDemoView::OnStepbystep)
 	ON_COMMAND(ID_REFRESH, &CUniversalDemoView::OnRefresh)
+	ON_COMMAND(ID_DP_BACKPACK, &CUniversalDemoView::backpack_DP)
+	ON_COMMAND(ID_DP_MATRIXCHAINPRODUCTION, &CUniversalDemoView::Matrix_Chain_Production)
+	ON_COMMAND(ID_GRAPH_PRIM, &CUniversalDemoView::primAlgorithm)
 END_MESSAGE_MAP()
 
 // CUniversalDemoView 建構/解構
@@ -88,6 +91,7 @@ CUniversalDemoView::CUniversalDemoView() noexcept
 	display = 0;
 	tree = BST();
 	T234 = tree234();
+	graph= Graph();
 }
 
 CUniversalDemoView::~CUniversalDemoView()
@@ -237,6 +241,68 @@ void CUniversalDemoView::OnDraw(CDC* /*pDC*/)
 		limit += ((char)(limitScale)+'0');
 		CString limitcs(limit.c_str());
 		MemDC.TextOut(nWidth - 300, nHeight - 40, limitcs);
+	}
+	else if (display == 5)
+	{
+		for (int i=0;i< finalResult.size();i++)
+		{
+			CString output(finalResult[i].c_str());
+			MemDC.TextOut(currentPos.x, currentPos.y + (i + 1) * scale*4/5, output);
+		}
+	}
+	else if (display == 6)
+	{
+		int num = graph.vertexs.size();
+		int range = scale*num/2;
+		for (int r = 0; r < graph.history.size(); r++)
+		{
+			double detla = (range * 2 + scale) * r;
+			CPen red(PS_SOLID, 3, RGB(255, 0, 0));
+			CPen black(PS_SOLID, 3, RGB(0, 0, 0));
+			vector<Edges> edges = graph.history[r].second;
+			vector<Vertexs> vertexs = graph.history[r].first;
+			for (int i = 0; i < edges.size(); i++)
+			{
+				if (edges[i].mark)
+					MemDC.SelectObject(&red);
+				else MemDC.SelectObject(&black);
+				double srcX = currentPos.x + graph.VT(edges[i].src).x * range;
+				double srcY = currentPos.y + graph.VT(edges[i].src).y * range + detla;
+				double dstX = currentPos.x + graph.VT(edges[i].dst).x * range;
+				double dstY = currentPos.y + graph.VT(edges[i].dst).y * range + detla;
+				CString cs(std::to_string(edges[i].val).c_str());
+				MemDC.TextOut((srcX + dstX) / 2, (srcY + dstY) / 2, cs);
+				MemDC.MoveTo(srcX, srcY);
+				MemDC.LineTo(dstX, dstY);
+			}
+
+			MemDC.SelectObject(&black);
+			CBrush unmark, mark;
+			unmark.CreateSolidBrush(RGB(255, 255, 255));
+			mark.CreateSolidBrush(RGB(128, 255, 255));
+			for (int i = 0; i < vertexs.size(); i++)
+			{
+				if (vertexs[i].mark)
+				{
+					MemDC.SelectObject(&mark);
+					MemDC.SetTextColor(RGB(0, 0, 128));
+					MemDC.SetBkColor(RGB(128, 255, 255));
+				}
+				else {
+					MemDC.SelectObject(&unmark);
+					MemDC.SetTextColor(RGB(0, 0, 0));
+					MemDC.SetBkColor(RGB(255, 255, 255));
+				}
+				double Vx = currentPos.x + vertexs[i].x * range;
+				double Vy = currentPos.y + vertexs[i].y * range + detla;
+				MemDC.Ellipse(Vx - R/2.0, Vy - R / 2.0, Vx + R / 2.0, Vy + R / 2.0);
+				CString cs(vertexs[i].val);
+				MemDC.TextOut(Vx - R/4.0, Vy - R / 4.0, cs);
+			}
+			MemDC.SelectObject(&unmark);
+			MemDC.SetTextColor(RGB(0, 0, 0));
+			MemDC.SetBkColor(RGB(255, 255, 255));
+		}
 	}
 
 		
@@ -786,5 +852,181 @@ void CUniversalDemoView::OnRefresh()
 			tree.postOrder();
 			postorder = tree.result;
 		}
+	Invalidate();
+}
+
+
+string CUniversalDemoView::matrixStrDivide(vector<vector<int>>& best, string letters, int i, int j)
+{
+	if (i==j)
+		return letters.substr(i-1,1);
+	return "(" + matrixStrDivide(best, letters, i, best[i][j] - 1) + matrixStrDivide(best, letters, best[i][j], j) + ")";
+}
+void CUniversalDemoView::backpack_DP()
+{
+	// TODO: 在此加入您的命令處理常式程式碼
+	CInput inputBox;
+	if (inputBox.DoModal() != IDOK) return;
+	vector<SortFmt> sortData;
+	sortData = initialize(inputBox.InputStr, ",", 0);
+	if (!sortData.size())
+		return;
+	finalResult.clear();
+	display = 5;
+	finalResult.push_back("輸入：");
+	finalResult.push_back("W="+sortData[0].str);
+	finalResult.push_back("輸出：");
+	const int capacity = sortData[0].val;
+	if (capacity < 14 || capacity>999)
+		return;
+	Items item[4] = {
+		{'A', 3 ,2},
+		{'B', 10 ,11},
+		{'C', 25 ,27},
+		{'D', 27 ,30}
+	};
+	int result[4] = { 0 };
+	vector<int> cost(capacity + 1, 0);
+	vector<int> best(capacity + 1, -1);
+	for (int j = 0; j < 4; j++)
+		for (int i = 1; i <= capacity; i++) {
+			if (i - item[j].size >= 0) {
+				int newVal = cost[i - item[j].size] + item[j].val;
+				if (cost[i] < newVal) {
+					cost[i] = newVal;
+					best[i] = j;
+				}
+			}
+		}
+	finalResult.push_back("今天可販售的最高金額"+ std::to_string(cost[capacity])+ "元，");
+	finalResult.push_back("農作物：");
+	for (int i = best.size() - 1; i > 0 && ~best[i]; i -= item[best[i]].size)
+		result[best[i]]++;
+	for (int i = 0; i < 4; i++)
+		if(result[i])
+		{
+			string itemName = "";
+			itemName += (char)(i + 'A');
+			finalResult.push_back(itemName + "，數量：" + std::to_string(result[i]) + "。\n");
+		}
+
+	Invalidate();
+}
+void CUniversalDemoView::Matrix_Chain_Production()
+{
+	// TODO: 在此加入您的命令處理常式程式碼
+	CInput inputBox;
+	if (inputBox.DoModal() != IDOK) return;
+	CT2CA toString(inputBox.InputStr);
+	string inputStr(toString);
+	vector<string> multinput;
+	char lineDelim[] = " \n";
+	multinput = multiSplit(inputStr, lineDelim);
+	multinput[1] = inputStr.substr(multinput[0].length());
+	int preStr=multinput[0].find("：");
+	string letters = multinput[0].substr(preStr+2, multinput[0].length() - preStr);
+	preStr = multinput[1].find("：");
+	string products = multinput[1].substr(preStr+2, multinput[1].length() - preStr);
+	char delim[] = " ,*";
+	vector<string> productsNum = multiSplit(products, delim);
+
+	
+	if (!productsNum.size())
+		return;
+	finalResult.clear();
+	display = 5;
+
+	vector<int> matrixs(1,0);
+	for (int i = 0; i < productsNum.size(); i+=2)
+		matrixs.push_back(stoi(productsNum[i]));
+	const int N = matrixs.size()-1;
+	matrixs.push_back(stoi(productsNum[productsNum.size() - 1]));
+
+	finalResult.push_back("Input："+inputStr);
+	//finalResult.push_back(multinput[1]);
+
+	vector<vector<int>> cost(N + 1, vector<int>(N + 1, 0));
+	vector<vector<int>> best(N + 1, vector<int>(N + 1, 0));
+	for (int i = 1; i <= N; i++)
+		for (int j = i + 1; j <= N; j++)
+			cost[i][j] = INT32_MAX;
+	for (int i = 1; i <= N; i++)
+		cost[i][i] = 0;
+	for (int j = 1; j <= N - 1; j++) // layer
+		for (int i = 1; i <= N - j; i++) { // nums of products
+			int u = i + j;
+			for (int k = i + 1; k <= u; k++) { // index of layer
+				int tmp = cost[i][k - 1] +
+					cost[k][u] +
+					matrixs[i] * matrixs[k] * matrixs[u + 1];
+				if (tmp < cost[i][u]) {
+					cost[i][u] = tmp;
+					best[i][u] = k;
+				}
+			}
+		}
+	finalResult.push_back("Output："+matrixStrDivide(best, letters, 1, N));
+	finalResult.push_back("所需乘法次數：" + std::to_string(cost[1][N]) + " 次");
+	Invalidate();
+}
+void CUniversalDemoView::primAlgorithm()
+{
+	// TODO: 在此加入您的命令處理常式程式碼
+	CInput inputBox;
+	if (inputBox.DoModal() != IDOK) return;
+	// init input
+	CT2CA toString(inputBox.InputStr);
+	string inputStr(toString);
+
+	finalResult.clear();
+	display = 6;
+
+	vector<string> multinput;
+	char lineDelim[] = " \n";
+	multinput = multiSplit(inputStr, lineDelim);
+	for (int i = 0; i < multinput.size(); i++)
+		finalResult.push_back(multinput[i]);
+	int preStr = inputStr.find("：");
+	inputStr= inputStr.substr(preStr+2);
+
+	char spaceDelim[] = " ";
+	string letters = multiSplit(inputStr, spaceDelim)[0];
+	preStr = inputStr.find("：");
+	inputStr = inputStr.substr(preStr+2);
+	char delim[] = " ()\n\r";
+	vector<string> nodes = multiSplit(inputStr, delim);
+	char delimNode[] = ",";
+	vector<Edges> edges;
+	for (int i = 0; i < nodes.size(); i++)
+	{
+		vector<string> tmp = multiSplit(nodes[i], delimNode);
+		edges.push_back({ tmp[0][0],tmp[1][0] ,stoi(tmp[2]),false });
+	}
+	// init end
+	graph = Graph(letters,edges,'A');
+
+	graph.vertexs[0].mark = true;
+	graph.record();
+
+	int marked = 0;
+	int minimum = -1,last=-2;
+	while (last != minimum)
+	{
+		last = minimum;
+		for (int i = 0; i < graph.edges.size(); i++)
+			if (graph.VT(graph.edges[i].src).mark ^ graph.VT(graph.edges[i].dst).mark)
+				if (minimum == -1 ||
+					graph.edges[minimum].mark ||
+					graph.edges[i].val < graph.edges[minimum].val)
+						minimum = i;
+			
+		graph.vertexs[graph.VTindex(graph.edges[minimum].dst)].mark = true;
+		graph.vertexs[graph.VTindex(graph.edges[minimum].src)].mark = true;
+		graph.edges[minimum].mark = true;
+		if(last != minimum)
+			graph.record();
+	}
+	
+
 	Invalidate();
 }

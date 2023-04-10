@@ -9,6 +9,26 @@
 using std::vector;
 using std::string;
 
+constexpr auto PI = 3.14159265359;
+constexpr auto DEG = 3.14159265359/180;
+
+struct Vertexs
+{
+    char val;
+    double x, y;
+    bool mark;
+};
+struct Edges
+{
+    char src, dst;
+    int val;
+    bool mark;
+};
+struct Items
+{
+    char name;
+    int size, val;
+};
 struct SortFmt
 {
 	long long val;
@@ -34,6 +54,50 @@ struct Node4
 	int num;
 	Node4* parent;
 };
+class Graph
+{
+private:
+    
+public:
+    vector<std::pair<vector<Vertexs>, vector<Edges>>> history;
+    vector<Vertexs> vertexs;
+    vector<Edges> edges;
+    vector<int> mapping;
+    char zero;
+    Graph::Graph()
+    {
+        mapping = vector<int>(500, -1);
+        zero = 'A';
+    }
+    Graph::Graph(string vertex, vector<Edges>& edge, char unit)
+    {
+        mapping = vector<int>(500, -1);
+        double divideDEG = 360.0 / vertex.length();
+        for (int i = 0; i < vertex.length(); i++)
+        {
+            double x = cos((-165 + i * divideDEG) * DEG);
+            double y = sin((-165 + i * divideDEG) * DEG);
+            mapping[vertex[i]] = i;
+            vertexs.push_back({ vertex[i],x,y,false });
+        }
+        edges = edge;
+        zero = unit;
+    }
+    Graph::~Graph()
+    {
+    }
+    Vertexs Graph::VT(char vertex) {
+        return vertexs[mapping[vertex]];
+    }
+    int Graph::VTindex(char vertex) {
+        return mapping[vertex];
+    }
+    void Graph::record() {
+        history.push_back({ vertexs, edges });
+    }
+};
+
+
 class tree234
 {
     int flag = 0;
@@ -664,6 +728,7 @@ protected:
 public:
     tree234 T234;
 	BST tree;
+    Graph graph;
 	CString original;
 	string query;
 	vector<string> splited;
@@ -689,6 +754,7 @@ public:
     vector<SortFmt> preorder;
     vector<SortFmt> inorder;
     vector<SortFmt> postorder;
+    
 
 	afx_msg BOOL OnMouseWheel(UINT nFlags, short zDelta, CPoint pt);
 	afx_msg BOOL OnEraseBkgnd(CDC* pDC);
@@ -721,6 +787,10 @@ public:
     afx_msg void OnCover();
     afx_msg void OnStepbystep();
     afx_msg void OnRefresh();
+    afx_msg void backpack_DP();
+    afx_msg void Matrix_Chain_Production();
+    string matrixStrDivide(vector<vector<int>>& best, string letters, int i, int j);
+    afx_msg void primAlgorithm();
 };
 
 #ifndef _DEBUG  // 對 Universal DemoView.cpp 中的版本進行偵錯
