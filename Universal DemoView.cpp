@@ -65,6 +65,7 @@ BEGIN_MESSAGE_MAP(CUniversalDemoView, CView)
 	ON_COMMAND(ID_DP_BACKPACK, &CUniversalDemoView::backpack_DP)
 	ON_COMMAND(ID_DP_MATRIXCHAINPRODUCTION, &CUniversalDemoView::Matrix_Chain_Production)
 	ON_COMMAND(ID_GRAPH_PRIM, &CUniversalDemoView::primAlgorithm)
+	ON_COMMAND(ID_DP_OPTIMALBST, &CUniversalDemoView::optimalBST)
 END_MESSAGE_MAP()
 
 // CUniversalDemoView 建構/解構
@@ -209,24 +210,12 @@ void CUniversalDemoView::OnDraw(CDC* /*pDC*/)
 			CString cs(finalData[i].str.c_str());
 			MemDC.TextOut(currentPos.x + i * interval + R / 4, currentPos.y + abs(finalData[i].val) * intervalY + R / 4, cs);
 		}
-		string preorderStr = "Preorder: ";
-		string inorderStr = "Inorder: ";
-		string postorderStr = "Postorder: ";
-		for (int i = 0; i < preorder.size(); i++)
-			preorderStr += preorder[i].str + (i + 1 == preorder.size() ? "" : " -> ");
-		for (int i = 0; i < inorder.size(); i++)
-			inorderStr += inorder[i].str + (i + 1 == inorder.size() ? "" : " -> ");
-		for (int i = 0; i < postorder.size(); i++)
-			postorderStr += postorder[i].str + (i + 1 == postorder.size() ? "" : " -> ");
-		CString precs(preorderStr.c_str());
-		if(preorder.size())
-		MemDC.TextOut(currentPos.x, currentPos.y -120, precs);
-		CString incs(inorderStr.c_str());
-		if (inorder.size())
-		MemDC.TextOut(currentPos.x, currentPos.y -80, incs);
-		CString postcs(postorderStr.c_str());
-		if (postorder.size())
-		MemDC.TextOut(currentPos.x, currentPos.y -40, postcs);
+		int height = extraText.size()+12;
+		for (int i = 0; i < extraText.size(); i++)
+		{
+			CString output(extraText[i].c_str());
+			MemDC.TextOut(currentPos.x, currentPos.y + (i + 1) * scale * 4 / 5-(height-i)* scale/4, output);
+		}
 	}
 	else if (display == 2)
 		fractalTree(&MemDC, 0, CPoint(currentPos.x + nWidth / 2.0, currentPos.y + nHeight / 2.0), 30, 1);
@@ -581,7 +570,6 @@ void CUniversalDemoView::snowflake(CDC* MemDC, int iter, int x,int y, int x5, in
 	}
 }
 
-
 void CUniversalDemoView::preorderToTree()
 {
 	// TODO: 在此加入您的命令處理常式程式碼
@@ -620,6 +608,8 @@ void CUniversalDemoView::preorderToTree()
 		tree.postOrder();
 		postorder = tree.result;
 	}
+	extraText.clear();
+	displayTreeOrder();
 	Invalidate();
 }
 void CUniversalDemoView::postorderToTree()
@@ -660,6 +650,8 @@ void CUniversalDemoView::postorderToTree()
 		tree.postOrder();
 		postorder = tree.result;
 	}
+	extraText.clear();
+	displayTreeOrder();
 	Invalidate();
 }
 void CUniversalDemoView::OnfractalTree()
@@ -683,29 +675,40 @@ void CUniversalDemoView::OnSnowflake()
 	display = 4;
 	Invalidate();
 }
-void CUniversalDemoView::OnInsert()
+void CUniversalDemoView::displayTreeOrder()
 {
-	// TODO: 在此加入您的命令處理常式程式碼
-	CInput inputBox;
-	if (inputBox.DoModal() != IDOK) return;
+	// TODO: 請在此新增您的實作程式碼.
+	string preorderStr = "Preorder: ";
+	string inorderStr = "Inorder: ";
+	string postorderStr = "Postorder: ";
+	for (int i = 0; i < preorder.size(); i++)
+		preorderStr += preorder[i].str + (i + 1 == preorder.size() ? "" : " -> ");
+	for (int i = 0; i < inorder.size(); i++)
+		inorderStr += inorder[i].str + (i + 1 == inorder.size() ? "" : " -> ");
+	for (int i = 0; i < postorder.size(); i++)
+		postorderStr += postorder[i].str + (i + 1 == postorder.size() ? "" : " -> ");
+	extraText.push_back(preorderStr);
+	extraText.push_back(inorderStr);
+	extraText.push_back(postorderStr);
+}
+void CUniversalDemoView::insertBST(vector<SortFmt>& sortData)
+{
+	// TODO: 請在此新增您的實作程式碼.
 	preorder.clear();
 	inorder.clear();
 	postorder.clear();
-
-	vector<SortFmt> sortData;
-	sortData = initialize(inputBox.InputStr, ",", 0);
 	if (enableTree234) {
-		if(cover)
+		if (cover)
 			T234.result.clear();
 		display = 0;
 		T234.buildTree(sortData);
-		if(enableRBT)
+		if (enableRBT)
 			T234.displayAsRBT();
 		else T234.preLocateNodes();
 		finalData = T234.result;
 	}
 	else {
-		if(cover)
+		if (cover)
 			tree.result.clear();
 		display = 0;
 		tree.buildTree(sortData);
@@ -721,6 +724,18 @@ void CUniversalDemoView::OnInsert()
 		tree.postOrder();
 		postorder = tree.result;
 	}
+}
+void CUniversalDemoView::OnInsert()
+{
+	// TODO: 在此加入您的命令處理常式程式碼
+	CInput inputBox;
+	if (inputBox.DoModal() != IDOK) return;
+	vector<SortFmt> sortData;
+	sortData = initialize(inputBox.InputStr, ",", 0);
+	insertBST(sortData);
+	extraText.clear();
+	if(!enableTree234)
+		displayTreeOrder();
 	Invalidate();
 }
 void CUniversalDemoView::OnSearch()
@@ -743,6 +758,8 @@ void CUniversalDemoView::OnSearch()
 		tree.preLocateNodes();
 		finalData = tree.result;
 	}
+	extraText.clear();
+	displayTreeOrder();
 	Invalidate();
 }
 void CUniversalDemoView::OnDelete()
@@ -764,7 +781,10 @@ void CUniversalDemoView::OnDelete()
 			tree.remove(item.val);
 		tree.preLocateNodes();
 		finalData = tree.result;
+		extraText.clear();
+		displayTreeOrder();
 	}
+	
 	Invalidate();
 }
 
@@ -800,6 +820,7 @@ void CUniversalDemoView::OnCuttree()
 	preorder.clear();
 	inorder.clear();
 	postorder.clear();
+	extraText.clear();
 	tree = BST();
 	T234 = tree234();
 	tree.enableAVL = enableAVL;
@@ -871,7 +892,8 @@ void CUniversalDemoView::backpack_DP()
 	sortData = initialize(inputBox.InputStr, ",", 0);
 	if (!sortData.size())
 		return;
-	finalResult.clear();
+	if (cover)
+		finalResult.clear();
 	display = 5;
 	finalResult.push_back("輸入：");
 	finalResult.push_back("W="+sortData[0].str);
@@ -933,7 +955,8 @@ void CUniversalDemoView::Matrix_Chain_Production()
 	
 	if (!productsNum.size())
 		return;
-	finalResult.clear();
+	if (cover)
+		finalResult.clear();
 	display = 5;
 
 	vector<int> matrixs(1,0);
@@ -943,7 +966,6 @@ void CUniversalDemoView::Matrix_Chain_Production()
 	matrixs.push_back(stoi(productsNum[productsNum.size() - 1]));
 
 	finalResult.push_back("Input："+inputStr);
-	//finalResult.push_back(multinput[1]);
 
 	vector<vector<int>> cost(N + 1, vector<int>(N + 1, 0));
 	vector<vector<int>> best(N + 1, vector<int>(N + 1, 0));
@@ -956,9 +978,9 @@ void CUniversalDemoView::Matrix_Chain_Production()
 		for (int i = 1; i <= N - j; i++) { // nums of products
 			int u = i + j;
 			for (int k = i + 1; k <= u; k++) { // index of layer
-				int tmp = cost[i][k - 1] +
-					cost[k][u] +
-					matrixs[i] * matrixs[k] * matrixs[u + 1];
+				int tmp =	cost[i][k - 1] +
+							cost[k][u] +
+							matrixs[i] * matrixs[k] * matrixs[u + 1];
 				if (tmp < cost[i][u]) {
 					cost[i][u] = tmp;
 					best[i][u] = k;
@@ -977,8 +999,8 @@ void CUniversalDemoView::primAlgorithm()
 	// init input
 	CT2CA toString(inputBox.InputStr);
 	string inputStr(toString);
-
-	finalResult.clear();
+	if (cover)
+		finalResult.clear();
 	display = 6;
 
 	vector<string> multinput;
@@ -1005,7 +1027,7 @@ void CUniversalDemoView::primAlgorithm()
 	// init end
 	graph = Graph(letters,edges,'A');
 
-	graph.vertexs[0].mark = true;
+	graph.vertexs[graph.VTindex('A')].mark = true;
 	graph.record();
 
 	int marked = 0;
@@ -1030,3 +1052,80 @@ void CUniversalDemoView::primAlgorithm()
 
 	Invalidate();
 }
+void CUniversalDemoView::optInsertOrder(vector<vector<int>>& best, vector<int>& order, int i, int j)
+{
+	if (i == j) {
+		order.push_back(i);
+		return;
+	}
+	order.push_back(best[i][j]);
+	if (best[i][j] - 1>=i)
+		optInsertOrder(best, order, i, best[i][j] - 1);
+	if (best[i][j] + 1 <= j)
+		optInsertOrder(best, order, best[i][j] + 1, j);
+	return;
+}
+void CUniversalDemoView::optimalBST()
+{
+	// TODO: 在此加入您的命令處理常式程式碼
+	CInput inputBox;
+	if (inputBox.DoModal() != IDOK) return;
+	CT2CA toString(inputBox.InputStr);
+	string inputStr(toString);
+	vector<string> multinput;
+	char lineDelim[] = " \n";
+	multinput = multiSplit(inputStr, lineDelim);
+	multinput[1] = inputStr.substr(multinput[0].length());
+	int preStr = multinput[0].find("：");
+	string letters = multinput[0].substr(preStr + 2, multinput[0].length() - preStr);
+	preStr = multinput[1].find("：");
+	string products = multinput[1].substr(preStr + 2, multinput[1].length() - preStr);
+	char delim[] = " ,";
+	vector<string> freqStr = multiSplit(products, delim);
+	if (cover)
+		extraText.clear();
+
+	vector<int> freq(1, 0);
+	for (int i = 0; i < freqStr.size(); i++)
+		freq.push_back(stoi(freqStr[i]));
+	const int N = freqStr.size();
+
+	extraText.push_back("Input：" + inputStr);
+
+	vector<vector<int>> cost(N + 2, vector<int>(N + 2, 0));
+	vector<vector<int>> best(N + 1, vector<int>(N + 1, 0));
+	for (int i = 1; i <= N; i++)
+		for (int j = i + 1; j <= N + 1; j++)
+			cost[i][j] = INT_MAX;
+	for (int i = 1; i <= N; i++)
+		cost[i][i] = freq[i];
+	for (int j = 1; j <= N - 1; j++)
+		for (int i = 1; i <= N - j; i++)
+		{
+			// i+j
+			int u = i + j;
+			for (int k = i; k <= u; k++)
+			{
+				int tmp =	cost[i][k - 1] +
+							cost[k + 1][u];
+				if (tmp < cost[i][u]) {
+					cost[i][u] = tmp;
+					best[i][u] = k;
+				}
+			}
+			int tmp = 0;
+			for (int k = i; k <= u; k++)
+				tmp += freq[k];
+			cost[i][u] += tmp;
+		}
+	vector<int> order;
+	vector<SortFmt> sortData;
+	extraText.push_back("總次數：" + std::to_string(cost[1][N]));
+	optInsertOrder(best, order, 1, N);
+	for (int i = 0; i < order.size(); i++)
+		sortData.push_back({ order[i],letters.substr(order[i] - 1,1)+" "+std::to_string(freq[order[i]])});
+	insertBST(sortData);
+	Invalidate();
+}
+
+

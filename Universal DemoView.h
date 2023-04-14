@@ -734,6 +734,7 @@ public:
 	vector<string> splited;
 	vector<SortFmt> finalData;
 	vector<string> finalResult;
+    vector<string> extraText;
 	bool inputChange;
 	RECT screen;
 	string sortDelim;
@@ -791,6 +792,10 @@ public:
     afx_msg void Matrix_Chain_Production();
     string matrixStrDivide(vector<vector<int>>& best, string letters, int i, int j);
     afx_msg void primAlgorithm();
+    afx_msg void optimalBST();
+    void optInsertOrder(vector<vector<int>>& best, vector<int>& order, int i, int j);
+    void insertBST(vector<SortFmt>& sortData);
+    void displayTreeOrder();
 };
 
 #ifndef _DEBUG  // 對 Universal DemoView.cpp 中的版本進行偵錯
