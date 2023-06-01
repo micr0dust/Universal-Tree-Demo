@@ -29,13 +29,19 @@
 #define ID_DP_MATRIXCHAINPRODUCTION     32790
 #define ID_GRAPH_PRIM                   32791
 #define ID_DP_OPTIMALBST                32792
+#define ID_GRAPH_GRAHAMSCAN             32793
+#define ID_GRAPH_KRUSKAL                32794
+#define ID_GRAPH_DIJKSTRA               32795
+#define ID_GRAPH_FLOYDWARSHALL          32796
+#define ID_GRAPH_VORONOIDIAGRAM         32797
+#define ID_SORT_HEAPSORT                32798
 
 // Next default values for new objects
 // 
 #ifdef APSTUDIO_INVOKED
 #ifndef APSTUDIO_READONLY_SYMBOLS
 #define _APS_NEXT_RESOURCE_VALUE        312
-#define _APS_NEXT_COMMAND_VALUE         32793
+#define _APS_NEXT_COMMAND_VALUE         32799
 #define _APS_NEXT_CONTROL_VALUE         1001
 #define _APS_NEXT_SYMED_VALUE           310
 #endif

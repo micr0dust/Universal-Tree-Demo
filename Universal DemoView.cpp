@@ -19,11 +19,13 @@
 #include<sstream>
 #include<fstream>
 #include<bitset>
+#include<algorithm>
 
 using std::vector;
 using std::string;
 using std::stringstream;
 using std::bitset;
+#define INF 10000
 
 #ifdef _DEBUG
 #define new DEBUG_NEW
@@ -66,6 +68,12 @@ BEGIN_MESSAGE_MAP(CUniversalDemoView, CView)
 	ON_COMMAND(ID_DP_MATRIXCHAINPRODUCTION, &CUniversalDemoView::Matrix_Chain_Production)
 	ON_COMMAND(ID_GRAPH_PRIM, &CUniversalDemoView::primAlgorithm)
 	ON_COMMAND(ID_DP_OPTIMALBST, &CUniversalDemoView::optimalBST)
+	ON_COMMAND(ID_GRAPH_GRAHAMSCAN, &CUniversalDemoView::OnGraphGrahamscan)
+	ON_COMMAND(ID_GRAPH_KRUSKAL, &CUniversalDemoView::OnGraphKruskal)
+	ON_COMMAND(ID_GRAPH_DIJKSTRA, &CUniversalDemoView::OnGraphDijkstra)
+	ON_COMMAND(ID_GRAPH_FLOYDWARSHALL, &CUniversalDemoView::OnGraphFloydwarshall)
+	ON_COMMAND(ID_GRAPH_VORONOIDIAGRAM, &CUniversalDemoView::OnGraphVoronoidiagram)
+	ON_COMMAND(ID_SORT_HEAPSORT, &CUniversalDemoView::OnSortHeapsort)
 END_MESSAGE_MAP()
 
 // CUniversalDemoView 建構/解構
@@ -243,6 +251,11 @@ void CUniversalDemoView::OnDraw(CDC* /*pDC*/)
 	{
 		int num = graph.vertexs.size();
 		int range = scale*num/2;
+		for (int i = 0; i < extraText.size(); i++)
+		{
+			CString output(extraText[i].c_str());
+			MemDC.TextOut(currentPos.x-30* scale, currentPos.y + (i + 1) * scale * 4 / 5, output);
+		}
 		for (int r = 0; r < graph.history.size(); r++)
 		{
 			double detla = (range * 2 + scale) * r;
@@ -259,8 +272,11 @@ void CUniversalDemoView::OnDraw(CDC* /*pDC*/)
 				double srcY = currentPos.y + graph.VT(edges[i].src).y * range + detla;
 				double dstX = currentPos.x + graph.VT(edges[i].dst).x * range;
 				double dstY = currentPos.y + graph.VT(edges[i].dst).y * range + detla;
-				CString cs(std::to_string(edges[i].val).c_str());
-				MemDC.TextOut((srcX + dstX) / 2, (srcY + dstY) / 2, cs);
+				if(edges[i].val>=0)
+				{
+					CString cs(std::to_string(edges[i].val).c_str());
+					MemDC.TextOut((srcX + dstX) / 2, (srcY + dstY) / 2, cs);
+				}
 				MemDC.MoveTo(srcX, srcY);
 				MemDC.LineTo(dstX, dstY);
 			}
@@ -1128,4 +1144,403 @@ void CUniversalDemoView::optimalBST()
 	Invalidate();
 }
 
+void CUniversalDemoView::OnGraphGrahamscan()
+{
+	CInput inputBox;
+	if (inputBox.DoModal() != IDOK) return;
+	// init input
+	CT2CA toString(inputBox.InputStr);
+	string inputStr(toString);
+	if (cover)
+		finalResult.clear();
+	extraText.clear();
+	display = 6;
 
+	vector<string> multinput;
+	char lineDelim[] = " \n";
+	multinput = multiSplit(inputStr, lineDelim);
+	for (int i = 0; i < multinput.size(); i++)
+		finalResult.push_back(multinput[i]);
+	//int preStr = inputStr.find("：");
+	//inputStr = inputStr.substr(preStr + 2);
+
+	//char spaceDelim[] = " ";
+	//string letters = multiSplit(inputStr, spaceDelim)[0];
+	int preStr = inputStr.find("：");
+	inputStr = inputStr.substr(preStr + 2);
+	char delim[] = " ()\n\r";
+	vector<string> nodes = multiSplit(inputStr, delim);
+	char delimNode[] = ",";
+	vector<Vertexs> vertices;
+	int maxVal = 0;
+	const int scaleGh = 1;
+	for (int i = 0; i < nodes.size(); i++)
+	{
+		vector<string> tmp = multiSplit(nodes[i], delimNode);
+		maxVal = max(max(stoi(tmp[1]), stoi(tmp[2])), maxVal);
+		vertices.push_back({ tmp[0][0],stod(tmp[1]) ,stod(tmp[2]),false });
+	}
+	// init
+	graph = Graph(vertices, 'A');
+
+	// Find the bottommost point
+	int ymin = graph.vertexs[0].y, min = 0;
+	for (int i = 1; i < graph.vertexs.size(); i++)
+	{
+		int y = graph.vertexs[i].y;
+
+		// Pick the bottom-most or choose the left
+		// most point in case of tie
+		if ((y < ymin) || (ymin == y && graph.vertexs[i].x < graph.vertexs[min].x))
+			ymin = graph.vertexs[i].y, min = i;
+	}
+	std::swap(graph.vertexs[0], graph.vertexs[min]);
+	graph.sortGh();
+	graph.verticeMap();
+
+	vertices.clear();
+	vertices.push_back(graph.vertexs[0]);
+	int m = 1; // Initialize size of modified array
+	for (int i = 1; i < graph.vertexs.size(); i++)
+	{
+		// Keep removing i while angle of i and i+1 is same
+		// with respect to p0
+		while (i < graph.vertexs.size() - 1 && graph.orientation(graph.vertexs[0], graph.vertexs[i], graph.vertexs[i + 1]) == 0)
+			i++;
+		vertices.push_back(graph.vertexs[i]);
+	}
+	if (vertices.size() < 3)
+		return;
+	vector<Vertexs> hull;
+	hull.push_back(vertices[0]);
+	hull.push_back(vertices[1]);
+	hull.push_back(vertices[2]);
+	// Process remaining n-3 points
+	for (int i = 3; i < vertices.size(); i++)
+	{
+		// Keep removing top while the angle formed by
+		// points next-to-top, top, and points[i] makes
+		// a non-left turn
+		while (hull.size() > 1 && graph.orientation(hull[hull.size() - 2], hull[hull.size() - 1], vertices[i]) != 2)
+			hull.pop_back();
+		hull.push_back(vertices[i]);
+	}
+	graph.verticeMap();
+	graph.vertexs[graph.VTindex(hull[0].val)].mark = true;
+	for (int i = 1; i < hull.size(); i++)
+	{
+		graph.vertexs[graph.VTindex(hull[i].val)].mark = true;
+		graph.edges.push_back({ hull[i - 1].val,hull[i].val,-1 });
+	}
+	graph.edges.push_back({ hull.back().val,hull[0].val,-1});
+	graph.record(scaleGh);
+	Invalidate();
+}
+void CUniversalDemoView::OnGraphKruskal()
+{
+	// TODO: 在此加入您的命令處理常式程式碼
+	CInput inputBox;
+	if (inputBox.DoModal() != IDOK) return;
+	// init input
+	CT2CA toString(inputBox.InputStr);
+	string inputStr(toString);
+	if (cover)
+		finalResult.clear();
+	extraText.clear();
+	display = 6;
+
+	vector<string> multinput;
+	char lineDelim[] = " \n";
+	multinput = multiSplit(inputStr, lineDelim);
+	for (int i = 0; i < multinput.size(); i++)
+		finalResult.push_back(multinput[i]);
+	int preStr = inputStr.find("：");
+	inputStr = inputStr.substr(preStr + 2);
+
+	char spaceDelim[] = " ";
+	string letters = multiSplit(inputStr, spaceDelim)[0];
+	preStr = inputStr.find("：");
+	inputStr = inputStr.substr(preStr + 2);
+	char delim[] = " ()\n\r";
+	vector<string> nodes = multiSplit(inputStr, delim);
+	char delimNode[] = ",";
+	vector<Edges> edges;
+	for (int i = 0; i < nodes.size(); i++)
+	{
+		vector<string> tmp = multiSplit(nodes[i], delimNode);
+		edges.push_back({ tmp[0][0],tmp[1][0] ,stoi(tmp[2]),false });
+	}
+	// init end
+	graph = Graph(letters, edges, 'A');
+	DSU un= DSU(letters.length());
+	graph.sortByEdgeCost();
+	int unionN = 1;
+	for (int i = 0; i < graph.edges.size();i++) {
+		int a= graph.VTindex(graph.edges[i].src),b= graph.VTindex(graph.edges[i].dst);
+		if (un.find(a) != un.find(b))
+		{
+			un.unite(a, b);
+			graph.vertexs[a].mark = true;
+			graph.vertexs[b].mark = true;
+			graph.edges[i].mark = true;
+			unionN++;
+			graph.record();
+		}
+		if (unionN >= letters.length())
+			break;
+	}
+	Invalidate();
+}
+void CUniversalDemoView::OnGraphDijkstra()
+{
+	// TODO: 在此加入您的命令處理常式程式碼
+	CInput inputBox;
+	if (inputBox.DoModal() != IDOK) return;
+	// init input
+	CT2CA toString(inputBox.InputStr);
+	string inputStr(toString);
+	if (cover)
+		finalResult.clear();
+	extraText.clear();
+	display = 6;
+
+	vector<string> multinput;
+	char lineDelim[] = " \n";
+	multinput = multiSplit(inputStr, lineDelim);
+	for (int i = 0; i < multinput.size(); i++)
+		finalResult.push_back(multinput[i]);
+	int preStr = inputStr.find("：");
+	inputStr = inputStr.substr(preStr + 2);
+
+	char spaceDelim[] = " ";
+	string letters = multiSplit(inputStr, spaceDelim)[0];
+	preStr = inputStr.find("：");
+	inputStr = inputStr.substr(preStr + 2);
+	char delim[] = " ()\n\r";
+	vector<string> nodes = multiSplit(inputStr, delim);
+	char delimNode[] = ",";
+	const int N = letters.length();
+	vector<Edges> edges;
+	vector<vector<int>> matrix(N, vector<int>(N, INF));
+	vector<vector<int>> mapToEg(N, vector<int>(N, -1));
+	int chatIndex=0;
+	int cmapIdex[200] = {0};
+	for (int i = 0; i < N; i++)
+		cmapIdex[letters[i]] = i;
+	for (int i = 0; i < nodes.size(); i++)
+	{
+		vector<string> tmp = multiSplit(nodes[i], delimNode);
+		char src = tmp[0][0], dst = tmp[1][0];
+		int weight = stoi(tmp[2]);
+		edges.push_back({ src,dst ,weight,false });
+		mapToEg[cmapIdex[src]][cmapIdex[dst]]= mapToEg[cmapIdex[dst]][cmapIdex[src]] = i;
+		matrix[cmapIdex[src]][cmapIdex[dst]] = matrix[cmapIdex[dst]][cmapIdex[src]] = weight;
+	}
+	// init end
+	graph = Graph(letters, edges, 'A');
+	graph.vertexs[graph.VTindex('A')].mark = true;
+	
+	vector<int> dist(N, INF);
+	vector<bool> visited(N,false);
+	
+	dist[cmapIdex['A']] = 0;
+	vector<int> source(N, 0);
+	for (int i = 0; i < N; i++)
+	{
+		int m = miniDist(dist, visited);
+		graph.vertexs[graph.VTindex(letters[m])].mark = visited[m] = true;
+		for (int k = 0; k < N; k++)
+		{
+			if (!visited[k] &&
+				matrix[m][k] &&
+				dist[m] != INF &&
+				matrix[m][k] != INF &&
+				dist[m] + matrix[m][k] < dist[k])
+			{
+				source[k] = m;
+				dist[k] = dist[m] + matrix[m][k];
+			}
+		}
+		if (source[m]!=m)
+			graph.edges[ mapToEg[source[m]][m] ].mark = true;
+		graph.record();
+	}
+
+	Invalidate();
+}
+int CUniversalDemoView::miniDist(vector<int>& dist, vector<bool>& visited)
+{
+	int minim = INT_MAX, indx=0;
+
+	for (int i = 0; i < visited.size(); i++)
+		if (!visited[i] && dist[i] <= minim)
+			minim = dist[indx = i];
+	return indx;
+}
+void CUniversalDemoView::OnGraphFloydwarshall()
+{
+	// TODO: 在此加入您的命令處理常式程式碼
+	CInput inputBox;
+	if (inputBox.DoModal() != IDOK) return;
+	// init input
+	CT2CA toString(inputBox.InputStr);
+	string inputStr(toString);
+	if (cover)
+	{
+		finalResult.clear();
+		extraText.clear();
+	}
+	display = 6;
+	//
+	extraText.clear();
+	extraText.push_back(inputStr);
+	//
+	vector<string> multinput;
+	char lineDelim[] = " \n";
+	multinput = multiSplit(inputStr, lineDelim);
+	for (int i = 0; i < multinput.size(); i++)
+		finalResult.push_back(multinput[i]);
+	int preStr = inputStr.find("：");
+	inputStr = inputStr.substr(preStr + 2);
+
+	char spaceDelim[] = " ";
+	string letters = multiSplit(inputStr, spaceDelim)[0];
+	preStr = inputStr.find("：");
+	inputStr = inputStr.substr(preStr + 2);
+	char delim[] = " ()\n\r";
+	vector<string> nodes = multiSplit(inputStr, delim);
+	char delimNode[] = ",";
+	const int N = letters.length();
+	vector<Edges> edges;
+	vector<vector<int>> cost(N, vector<int>(N, INF));
+	vector<vector<int>> mapToEg(N+1, vector<int>(N, -1));
+	vector<vector<int>> best(N, vector<int>(N, 0));
+	int chatIndex = 0;
+	int cmapIdex[200] = { 0 };
+	for (int i = 0; i < N; i++)
+	{
+		cmapIdex[letters[i]] = i;
+		cost[i][i] = 0;
+		best[i][i] = i;
+	}
+	for (int i = 1; i < nodes.size(); i++)
+	{
+		vector<string> tmp = multiSplit(nodes[i], delimNode);
+		char src = tmp[0][0], dst = tmp[1][0];
+		int weight = stoi(tmp[2]);
+		edges.push_back({ src,dst ,weight,false });
+		mapToEg[cmapIdex[src]][cmapIdex[dst]] = mapToEg[cmapIdex[dst]][cmapIdex[src]] = i;
+		cost[cmapIdex[src]][cmapIdex[dst]] = cost[cmapIdex[dst]][cmapIdex[src]] = weight;
+	}
+	// init end
+	graph = Graph(letters, edges, 'A');
+
+	for (int k = 0; k < N; k++)
+		for (int i = 0; i < N; i++)
+			for (int j = 0; j < N; j++)
+			{
+				int tmp = cost[i][k] + cost[k][j];
+				if (cost[i][j] > tmp) {
+					cost[i][j] = tmp;
+					best[i][j] = k;
+				}
+			}
+	int offset = 15;
+	string title = "";
+	for (int i = 0; i < offset; i++)
+		title += " ";
+	for (int i = 0; i < N; i++)
+	{
+		title += letters[i];
+		for (int i = 0; i < offset; i++)
+			title += " ";
+	}
+	
+	extraText.push_back(title);
+	for (int i = 0; i < N; i++)
+	{
+		string lineBuff = "";
+		lineBuff += letters[i];
+		for (int i = 0; i < offset-2; i++)
+			lineBuff += " ";
+		for (int j = 0; j < N; j++)
+		{
+			if (cost[i][j] >= INF)
+				lineBuff += "inf/";
+			else
+				lineBuff += std::to_string(cost[i][j]) + "/";
+			lineBuff += letters[best[i][j]];
+			for (int k = lineBuff.length(); k < offset * (j + 2)+1; k++)
+				lineBuff += " ";
+		}
+		
+		extraText.push_back(lineBuff);
+	}
+	graph.record();
+	Invalidate();
+}
+void CUniversalDemoView::OnGraphVoronoidiagram()
+{
+	// TODO: 在此加入您的命令處理常式程式碼
+
+}
+void CUniversalDemoView::OnSortHeapsort()
+{
+	CInput inputBox;
+	if (inputBox.DoModal() != IDOK) return;
+	OnCover();
+	vector<SortFmt> sortData;
+
+	display = 0;
+	sortData = initialize(inputBox.InputStr, ";");
+	const int N = sortData.size();
+	for (int i = N / 2 - 1; i >= 0; i--)
+		heapify(sortData, N, i);
+	// Heap sort
+	for (int i = N - 1; i >= 0; i--)
+	{
+		std::swap(sortData[0], sortData[i]);
+		// Heapify root element to get highest element at root again
+		heapify(sortData, i, 0);
+	}
+	arrToHeapTree(sortData);
+	Invalidate();
+}
+void CUniversalDemoView::heapify(vector<SortFmt>& arr, int n, int i)
+{
+	int largest = i;
+	int left = 2 * i + 1;
+	int right = 2 * i + 2;
+
+	if (left < n && arr[left].val > arr[largest].val)
+		largest = left;
+
+	if (right < n && arr[right].val > arr[largest].val)
+		largest = right;
+
+	// Swap and continue heapifying if root is not largest
+	if (largest != i)
+	{
+		std::swap(arr[i], arr[largest]);
+		heapify(arr, n, largest);
+	}
+}
+void CUniversalDemoView::arrToHeapTree(vector<SortFmt>& sortData)
+{
+	//cover = false;
+	tree = BST();
+	
+	tree.result.clear();
+	display = 0;
+	tree.buildTree(sortData);
+	tree.preLocateNodes();
+	
+	finalData = tree.result;
+
+	extraText.clear();
+	tree.deleteBST();
+}
+vector<int> CUniversalDemoView::getHeapTreeInorder(vector<SortFmt>& sortData)
+{
+	
+}

@@ -5,6 +5,7 @@
 #pragma once
 #include<vector>
 #include<string>
+#include<algorithm>
 
 using std::vector;
 using std::string;
@@ -54,6 +55,49 @@ struct Node4
 	int num;
 	Node4* parent;
 };
+class DSU {
+    int* parent;
+    int* rank;
+
+public:
+    DSU(int n)
+    {
+        parent = new int[n];
+        rank = new int[n];
+
+        for (int i = 0; i < n; i++) {
+            parent[i] = -1;
+            rank[i] = 1;
+        }
+    }
+
+    // Find function
+    int find(int i)
+    {
+        if (parent[i] == -1)
+            return i;
+
+        return parent[i] = find(parent[i]);
+    }
+
+    // Union function
+    void unite(int x, int y)
+    {
+        int s1 = find(x);
+        int s2 = find(y);
+
+        if (s1 != s2) {
+            if (rank[s1] < rank[s2])
+                parent[s1] = s2;
+            else if (rank[s1] > rank[s2])
+                parent[s2] = s1;
+            else {
+                parent[s2] = s1;
+                rank[s1] += 1;
+            }
+        }
+    }
+};
 class Graph
 {
 private:
@@ -64,12 +108,12 @@ public:
     vector<Edges> edges;
     vector<int> mapping;
     char zero;
-    Graph::Graph()
+    Graph()
     {
         mapping = vector<int>(500, -1);
         zero = 'A';
     }
-    Graph::Graph(string vertex, vector<Edges>& edge, char unit)
+    Graph(string vertex, vector<Edges>& edge, char unit)
     {
         mapping = vector<int>(500, -1);
         double divideDEG = 360.0 / vertex.length();
@@ -83,21 +127,76 @@ public:
         edges = edge;
         zero = unit;
     }
-    Graph::~Graph()
+    Graph(vector<Vertexs>& vertices, char unit)
+    {
+        vertexs = vertices;
+        zero = unit;
+    }
+    ~Graph()
     {
     }
-    Vertexs Graph::VT(char vertex) {
+    Vertexs VT(char vertex) {
         return vertexs[mapping[vertex]];
     }
-    int Graph::VTindex(char vertex) {
+    int VTindex(char vertex) {
         return mapping[vertex];
     }
-    void Graph::record() {
+    void record(int scale=1) {
+        for (int i = 0; i < vertexs.size(); i++)
+        {
+            vertexs[i].x /= scale;
+            vertexs[i].y /= scale;
+        }
         history.push_back({ vertexs, edges });
     }
+    int vrcmp(Vertexs p1, Vertexs p2)
+    {
+        int o = orientation(vertexs[0], p1, p2);
+        if (o == 0)
+            return (distSq(vertexs[0], p2) >= distSq(vertexs[0], p1)) ? -1 : 1;
+
+        return o;
+    }
+    void verticeMap() {
+        mapping = vector<int>(500, -1);
+        for (int i = 0; i < vertexs.size(); i++) {
+            mapping[vertexs[i].val] = i;
+        }
+    }
+    void sortByEdgeCost()
+    {
+        std::sort(edges.begin(), edges.end(),
+            [this](Edges e1, Edges e2) {
+                return e1.val < e2.val;
+            }
+        );
+    }
+    void sortGh()
+    {
+        std::sort(vertexs.begin() + 1, vertexs.end(),
+            [this](Vertexs p1, Vertexs p2) {
+                int o = orientation(vertexs[0], p1, p2);
+                if (o == 0)
+                    return (distSq(vertexs[0], p2) >= distSq(vertexs[0], p1)) ? true : false;
+
+                return (o == 2) ? true : false;
+            }
+        );
+    }
+    int distSq(Vertexs p1, Vertexs p2)
+    {
+        return (p1.x - p2.x) * (p1.x - p2.x) + (p1.y - p2.y) * (p1.y - p2.y);
+    }
+    int orientation(Vertexs p, Vertexs q, Vertexs r)
+    {
+        int val = (q.y - p.y) * (r.x - q.x) -
+            (q.x - p.x) * (r.y - q.y);
+
+        if (val == 0)
+            return 0;             // collinear
+        return (val > 0) ? 1 : 2; // clock or counterclock wise
+    }
 };
-
-
 class tree234
 {
     int flag = 0;
@@ -796,6 +895,16 @@ public:
     void optInsertOrder(vector<vector<int>>& best, vector<int>& order, int i, int j);
     void insertBST(vector<SortFmt>& sortData);
     void displayTreeOrder();
+    afx_msg void OnGraphGrahamscan();
+    afx_msg void OnGraphKruskal();
+    afx_msg void OnGraphDijkstra();
+    int miniDist(vector<int>& dist, vector<bool>& visited);
+    afx_msg void OnGraphFloydwarshall();
+    afx_msg void OnGraphVoronoidiagram();
+    afx_msg void OnSortHeapsort();
+    void heapify(vector<SortFmt>& arr, int n, int i);
+    void arrToHeapTree(vector<SortFmt>& arr);
+    vector<int> CUniversalDemoView::getHeapTreeInorder(vector<SortFmt>& sortData);
 };
 
 #ifndef _DEBUG  // 對 Universal DemoView.cpp 中的版本進行偵錯
