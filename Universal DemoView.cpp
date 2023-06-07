@@ -16,6 +16,7 @@
 
 #include<vector>
 #include<string>
+#include<map>
 #include<sstream>
 #include<fstream>
 #include<bitset>
@@ -1420,17 +1421,17 @@ void CUniversalDemoView::OnGraphFloydwarshall()
 	for (int i = 0; i < N; i++)
 	{
 		cmapIdex[letters[i]] = i;
-		cost[i][i] = 0;
+		cost[i][i] = INF;
 		best[i][i] = i;
 	}
-	for (int i = 1; i < nodes.size(); i++)
+	for (int i = 0; i < nodes.size(); i++)
 	{
 		vector<string> tmp = multiSplit(nodes[i], delimNode);
 		char src = tmp[0][0], dst = tmp[1][0];
 		int weight = stoi(tmp[2]);
 		edges.push_back({ src,dst ,weight,false });
-		mapToEg[cmapIdex[src]][cmapIdex[dst]] = mapToEg[cmapIdex[dst]][cmapIdex[src]] = i;
-		cost[cmapIdex[src]][cmapIdex[dst]] = cost[cmapIdex[dst]][cmapIdex[src]] = weight;
+		mapToEg[cmapIdex[src]][cmapIdex[dst]] = i;
+		cost[cmapIdex[src]][cmapIdex[dst]] = weight;
 	}
 	// init end
 	graph = Graph(letters, edges, 'A');
@@ -1466,11 +1467,13 @@ void CUniversalDemoView::OnGraphFloydwarshall()
 		for (int j = 0; j < N; j++)
 		{
 			if (cost[i][j] >= INF)
-				lineBuff += "inf/";
+				lineBuff += "INF/";
 			else
+			{
 				lineBuff += std::to_string(cost[i][j]) + "/";
-			lineBuff += letters[best[i][j]];
-			for (int k = lineBuff.length(); k < offset * (j + 2)+1; k++)
+				lineBuff += letters[best[i][j]];
+			}
+			for (int k = lineBuff.length()+(cost[i][j]<INF?1:0); k < offset * (j + 2)+1; k++)
 				lineBuff += " ";
 		}
 		
@@ -1488,22 +1491,27 @@ void CUniversalDemoView::OnSortHeapsort()
 {
 	CInput inputBox;
 	if (inputBox.DoModal() != IDOK) return;
-	OnCover();
+	cover = false;
+	finalData.clear();
 	vector<SortFmt> sortData;
 
 	display = 0;
 	sortData = initialize(inputBox.InputStr, ";");
 	const int N = sortData.size();
+	arrToHeapTree(sortData);
 	for (int i = N / 2 - 1; i >= 0; i--)
 		heapify(sortData, N, i);
+	arrToHeapTree(sortData);
 	// Heap sort
 	for (int i = N - 1; i >= 0; i--)
 	{
 		std::swap(sortData[0], sortData[i]);
+		sortData[i].mark = true;
 		// Heapify root element to get highest element at root again
 		heapify(sortData, i, 0);
+		arrToHeapTree(sortData);
 	}
-	arrToHeapTree(sortData);
+	cover = true;
 	Invalidate();
 }
 void CUniversalDemoView::heapify(vector<SortFmt>& arr, int n, int i)
@@ -1529,18 +1537,37 @@ void CUniversalDemoView::arrToHeapTree(vector<SortFmt>& sortData)
 {
 	//cover = false;
 	tree = BST();
-	
-	tree.result.clear();
-	display = 0;
-	tree.buildTree(sortData);
-	tree.preLocateNodes();
-	
-	finalData = tree.result;
+	vector<SortFmt> preorderRes, inorderRes;
+	vector<SortFmt> treeAcData;
+	getHeapTreePreorder(sortData, preorderRes,0);
+	getHeapTreeInorder(sortData, inorderRes, 0);
+	std::map<string, int> mapOrder;
+	for (int i = 0; i < preorderRes.size(); i++)
+		mapOrder.insert(std::pair<string, int>(preorderRes[i].str, i));
+	for (int i = 0; i < inorderRes.size(); i++)
+		treeAcData.push_back({ mapOrder[inorderRes[i].str], inorderRes[i].str,NULL,inorderRes[i].mark });
 
-	extraText.clear();
-	tree.deleteBST();
+	tree.buildTree(treeAcData);
+	tree.result = finalData;
+	tree.preLocateNodes();
+	finalData = tree.result;
 }
-vector<int> CUniversalDemoView::getHeapTreeInorder(vector<SortFmt>& sortData)
+void CUniversalDemoView::getHeapTreePreorder(vector<SortFmt>& sortData, vector<SortFmt>& res, int dst)
 {
-	
+	//0 12 3456 78901234
+	if (dst * 2 + 1 < sortData.size())
+		getHeapTreePreorder(sortData, res, dst*2+1);
+	res.push_back(sortData[dst]);
+	if (dst * 2 + 2 < sortData.size())
+		getHeapTreePreorder(sortData, res, dst*2+2);
+	return;
+}
+void CUniversalDemoView::getHeapTreeInorder(vector<SortFmt>& sortData, vector<SortFmt>& res, int dst)
+{
+	res.push_back(sortData[dst]);
+	if (dst * 2 + 1 < sortData.size())
+		getHeapTreeInorder(sortData, res, dst * 2 + 1);
+	if (dst * 2 + 2 < sortData.size())
+		getHeapTreeInorder(sortData, res, dst * 2 + 2);
+	return;
 }

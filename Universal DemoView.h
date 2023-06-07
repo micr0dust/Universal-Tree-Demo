@@ -904,7 +904,8 @@ public:
     afx_msg void OnSortHeapsort();
     void heapify(vector<SortFmt>& arr, int n, int i);
     void arrToHeapTree(vector<SortFmt>& arr);
-    vector<int> CUniversalDemoView::getHeapTreeInorder(vector<SortFmt>& sortData);
+    void getHeapTreePreorder(vector<SortFmt>& sortData, vector<SortFmt>& res, int dst);
+    void getHeapTreeInorder(vector<SortFmt>& sortData, vector<SortFmt>& res, int dst);
 };
 
 #ifndef _DEBUG  // 對 Universal DemoView.cpp 中的版本進行偵錯
