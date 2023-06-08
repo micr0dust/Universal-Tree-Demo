@@ -141,16 +141,27 @@ public:
     int VTindex(char vertex) {
         return mapping[vertex];
     }
-    void record(int scale=1) {
+    int EGindex(char src, char dst) {
+        for (int i = 0; i < edges.size(); i++)
+            if (edges[i].src == src && edges[i].dst == dst)
+                return i;
+    }
+    void record(int scale=1
+        ,vector<Vertexs>& vt = vector<Vertexs>()
+        ,vector<Edges>& eg = vector<Edges>()) {
+        if (vt.empty())
+            vt = vertexs;
+        if (eg.empty())
+            eg = edges;
         double maxValue = 0;
-        for (int i = 0; i < vertexs.size(); i++)
-            maxValue = max(maxValue, max(vertexs[i].x, vertexs[i].y));
-        for (int i = 0; i < vertexs.size(); i++)
+        for (int i = 0; i < vt.size(); i++)
+            maxValue = max(maxValue, max(vt[i].x, vt[i].y));
+        for (int i = 0; i < vt.size(); i++)
         {
-            vertexs[i].x *= scale/maxValue;
-            vertexs[i].y *= scale/maxValue;
+            vt[i].x *= scale/maxValue;
+            vt[i].y *= scale/maxValue;
         }
-        history.push_back({ vertexs, edges });
+        history.push_back({ vt, eg });
     }
     int vrcmp(Vertexs p1, Vertexs p2)
     {
@@ -855,9 +866,11 @@ public:
     int limitScale;
     double angle;
     bool mirror;
+    bool digraph;
     vector<SortFmt> preorder;
     vector<SortFmt> inorder;
     vector<SortFmt> postorder;
+    vector<vector<int>> bestResult;
     
 
 	afx_msg BOOL OnMouseWheel(UINT nFlags, short zDelta, CPoint pt);
@@ -911,6 +924,7 @@ public:
     void getHeapTreePreorder(vector<SortFmt>& sortData, vector<SortFmt>& res, int dst);
     void getHeapTreeInorder(vector<SortFmt>& sortData, vector<SortFmt>& res, int dst);
     afx_msg void OnMirror();
+    int restoreFWPath(Graph& queryGraph, int src, int dst);
 };
 
 #ifndef _DEBUG  // 對 Universal DemoView.cpp 中的版本進行偵錯

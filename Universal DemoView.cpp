@@ -104,6 +104,7 @@ CUniversalDemoView::CUniversalDemoView() noexcept
 	T234 = tree234();
 	graph= Graph();
 	mirror = false;
+	digraph = false;
 }
 
 CUniversalDemoView::~CUniversalDemoView()
@@ -270,20 +271,42 @@ void CUniversalDemoView::OnDraw(CDC* /*pDC*/)
 			vector<Vertexs> vertexs = graph.history[r].first;
 			for (int i = 0; i < edges.size(); i++)
 			{
+				double modfi = 0;
+				if(digraph)
+					modfi = (edges[i].src > edges[i].dst ? R / 5.0 : -R / 5.0);
 				if (edges[i].mark)
 					MemDC.SelectObject(&red);
 				else MemDC.SelectObject(&black);
-				double srcX = currentPos.x + graph.VT(edges[i].src).x * range;
-				double srcY = currentPos.y + graph.VT(edges[i].src).y * inv * range + detla;
-				double dstX = currentPos.x + graph.VT(edges[i].dst).x * range;
-				double dstY = currentPos.y + graph.VT(edges[i].dst).y * inv * range + detla;
+				double sX = vertexs[graph.VTindex(edges[i].src)].x;
+				double sY = vertexs[graph.VTindex(edges[i].src)].y;
+				double dX = vertexs[graph.VTindex(edges[i].dst)].x;
+				double dY = vertexs[graph.VTindex(edges[i].dst)].y;
+
+				double srcX = currentPos.x + vertexs[graph.VTindex(edges[i].src)].x * range;
+				double srcY = currentPos.y + vertexs[graph.VTindex(edges[i].src)].y * inv * range + detla + modfi;
+				double dstX = currentPos.x + vertexs[graph.VTindex(edges[i].dst)].x * range;
+				double dstY = currentPos.y + vertexs[graph.VTindex(edges[i].dst)].y * inv * range + detla + modfi;
 				if(edges[i].val>=0)
 				{
+					if (digraph)
+						modfi = (edges[i].src > edges[i].dst ? 0 : -R);
 					CString cs(std::to_string(edges[i].val).c_str());
-					MemDC.TextOut((srcX + dstX) / 2, (srcY + dstY) / 2, cs);
+					MemDC.TextOut((srcX + dstX) / 2, (srcY + dstY) / 2+ modfi, cs);
 				}
 				MemDC.MoveTo(srcX, srcY);
 				MemDC.LineTo(dstX, dstY);
+				double maxAxis = max(abs(sX - dX), abs(sY - dY));
+				double arrowX = 50*(sX - dX) / maxAxis;
+				double arrowY = 50*(sY - dY) / maxAxis;
+				double len = sqrt(arrowX * arrowX + arrowY * arrowY);
+				arrowX = arrowX/len * R / 2;
+				arrowY = arrowY/len * R / 2;
+				dstX = dstX + arrowX;
+				dstY = dstY + arrowY;
+				MemDC.MoveTo(dstX, dstY);
+				MemDC.LineTo(dstX+arrowX*cos(10.0*DEG)-arrowY*sin(10.0*DEG), dstY+arrowX*sin(10.0*DEG)+arrowY*cos(10.0*DEG));
+				MemDC.MoveTo(dstX, dstY);
+				MemDC.LineTo(dstX+arrowX*cos(-10.0*DEG) - arrowY*sin(-10.0*DEG), dstY+arrowX*sin(-10.0*DEG)+arrowY*cos(-10.0*DEG));
 			}
 
 			MemDC.SelectObject(&black);
@@ -536,6 +559,7 @@ int CUniversalDemoView::bits(int x, int shift, int bit)
 	bitset<32> result((x & mask) >> shift);
 	return result.to_ulong();
 }
+
 void CUniversalDemoView::fractalTree(CDC* MemDC, int layer, CPoint pos, double angles, double cum)
 {
 	if (layer > limitScale) return;
@@ -766,11 +790,17 @@ void CUniversalDemoView::OnSearch()
 	// TODO: 在此加入您的命令處理常式程式碼
 	CInput inputBox;
 	if (inputBox.DoModal() != IDOK) return;
-
 	vector<SortFmt> sortData;
 	sortData = initialize(inputBox.InputStr, ",", 0);
-	if (enableTree234) {
-
+	if (display==6 && sortData.size() == 2 && bestResult.size()) {
+		Graph queryGraph = Graph(graph);
+		int src = queryGraph.VTindex(sortData[0].str[0]);
+		int dst = queryGraph.VTindex(sortData[1].str[0]);
+		graph.history.clear();
+		if (restoreFWPath(queryGraph, src, dst) == -1)
+			return graph.record(2);
+		queryGraph.vertexs[dst].mark = true;
+		graph.record(2, queryGraph.vertexs,queryGraph.edges);
 	}
 	else {
 		if (cover)
@@ -780,9 +810,9 @@ void CUniversalDemoView::OnSearch()
 			tree.search(item.val);
 		tree.preLocateNodes();
 		finalData = tree.result;
+		extraText.clear();
+		displayTreeOrder();
 	}
-	extraText.clear();
-	displayTreeOrder();
 	Invalidate();
 }
 void CUniversalDemoView::OnDelete()
@@ -1173,7 +1203,7 @@ void CUniversalDemoView::OnGraphGrahamscan()
 		finalResult.clear();
 	extraText.clear();
 	display = 6;
-
+	digraph = false;
 	vector<string> multinput;
 	char lineDelim[] = " \n";
 	multinput = multiSplit(inputStr, lineDelim);
@@ -1280,7 +1310,7 @@ void CUniversalDemoView::OnGraphKruskal()
 		finalResult.clear();
 	extraText.clear();
 	display = 6;
-
+	digraph = false;
 	vector<string> multinput;
 	char lineDelim[] = " \n";
 	multinput = multiSplit(inputStr, lineDelim);
@@ -1336,7 +1366,7 @@ void CUniversalDemoView::OnGraphDijkstra()
 		finalResult.clear();
 	extraText.clear();
 	display = 6;
-
+	digraph = false;
 	vector<string> multinput;
 	char lineDelim[] = " \n";
 	multinput = multiSplit(inputStr, lineDelim);
@@ -1414,7 +1444,7 @@ void CUniversalDemoView::OnGraphFloydwarshall()
 {
 	// TODO: 在此加入您的命令處理常式程式碼
 	CInput inputBox;
-	inputBox.InputStr = L"代號：ABCDEF 邊：(A,B,1)(A,C,12)(B,C,9)(B,D,3)(C,E,5)(D,C,4)(D,E,13)(D,F,15)(E,F,4)";
+	inputBox.InputStr = L"代號：ABCDEF 邊：(A,B,1)(B,A,10)(A,C,12)(B,C,9)(B,D,3)(C,E,5)(C,B,2)(D,C,4)(D,E,13)(D,F,15)(E,F,4)";
 	if (inputBox.DoModal() != IDOK) return;
 	// init input
 	CT2CA toString(inputBox.InputStr);
@@ -1448,13 +1478,13 @@ void CUniversalDemoView::OnGraphFloydwarshall()
 	vector<Edges> edges;
 	vector<vector<int>> cost(N, vector<int>(N, INF));
 	vector<vector<int>> mapToEg(N+1, vector<int>(N, -1));
-	vector<vector<int>> best(N, vector<int>(N, 0));
+	vector<vector<int>> best(N, vector<int>(N, INF));
 	int chatIndex = 0;
 	int cmapIdex[200] = { 0 };
 	for (int i = 0; i < N; i++)
 	{
 		cmapIdex[letters[i]] = i;
-		cost[i][i] = INF;
+		cost[i][i] = 0;
 		best[i][i] = i;
 	}
 	for (int i = 0; i < nodes.size(); i++)
@@ -1464,6 +1494,7 @@ void CUniversalDemoView::OnGraphFloydwarshall()
 		int weight = stoi(tmp[2]);
 		edges.push_back({ src,dst ,weight,false });
 		mapToEg[cmapIdex[src]][cmapIdex[dst]] = i;
+		best[cmapIdex[src]][cmapIdex[dst]] = cmapIdex[src];
 		cost[cmapIdex[src]][cmapIdex[dst]] = weight;
 	}
 	// init end
@@ -1479,6 +1510,7 @@ void CUniversalDemoView::OnGraphFloydwarshall()
 					best[i][j] = k;
 				}
 			}
+	bestResult = best;
 	int offset = 15;
 	string title = "";
 	for (int i = 0; i < offset; i++)
@@ -1512,7 +1544,8 @@ void CUniversalDemoView::OnGraphFloydwarshall()
 		
 		extraText.push_back(lineBuff);
 	}
-	graph.record();
+	digraph = true;
+	graph.record(2);
 	Invalidate();
 }
 void CUniversalDemoView::OnGraphVoronoidiagram()
@@ -1612,5 +1645,25 @@ void CUniversalDemoView::getHeapTreeInorder(vector<SortFmt>& sortData, vector<So
 	if (dst * 2 + 2 < sortData.size())
 		getHeapTreeInorder(sortData, res, dst * 2 + 2);
 	return;
+}
+int CUniversalDemoView::restoreFWPath(Graph& queryGraph,int src, int dst)
+{
+	int k = bestResult[src][dst];
+	if (k >= INF)
+		return -1;
+	if (k == src || k == dst)
+	{
+		queryGraph.vertexs[k].mark = true;
+		char kC = queryGraph.vertexs[k].val;
+		char dstC = queryGraph.vertexs[dst].val;
+		int eg = queryGraph.EGindex(kC, dstC);
+		queryGraph.edges[eg].mark = true;
+		return src;
+	}
+	int res1 = restoreFWPath(queryGraph,src, k);
+	int res2 = restoreFWPath(queryGraph,k, dst);
+	if (res1 == -1 || res2 == -1)
+		return -1;
+	return src;
 }
 
