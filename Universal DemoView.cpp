@@ -75,6 +75,7 @@ BEGIN_MESSAGE_MAP(CUniversalDemoView, CView)
 	ON_COMMAND(ID_GRAPH_FLOYDWARSHALL, &CUniversalDemoView::OnGraphFloydwarshall)
 	ON_COMMAND(ID_GRAPH_VORONOIDIAGRAM, &CUniversalDemoView::OnGraphVoronoidiagram)
 	ON_COMMAND(ID_SORT_HEAPSORT, &CUniversalDemoView::OnSortHeapsort)
+	ON_COMMAND(ID_MIRROR, &CUniversalDemoView::OnMirror)
 END_MESSAGE_MAP()
 
 // CUniversalDemoView 建構/解構
@@ -102,6 +103,7 @@ CUniversalDemoView::CUniversalDemoView() noexcept
 	tree = BST();
 	T234 = tree234();
 	graph= Graph();
+	mirror = false;
 }
 
 CUniversalDemoView::~CUniversalDemoView()
@@ -250,6 +252,7 @@ void CUniversalDemoView::OnDraw(CDC* /*pDC*/)
 	}
 	else if (display == 6)
 	{
+		const int inv = mirror ? -1 : 1;
 		int num = graph.vertexs.size();
 		int range = scale*num/2;
 		for (int i = 0; i < extraText.size(); i++)
@@ -260,6 +263,7 @@ void CUniversalDemoView::OnDraw(CDC* /*pDC*/)
 		for (int r = 0; r < graph.history.size(); r++)
 		{
 			double detla = (range * 2 + scale) * r;
+			//const flip=()
 			CPen red(PS_SOLID, 3, RGB(255, 0, 0));
 			CPen black(PS_SOLID, 3, RGB(0, 0, 0));
 			vector<Edges> edges = graph.history[r].second;
@@ -270,9 +274,9 @@ void CUniversalDemoView::OnDraw(CDC* /*pDC*/)
 					MemDC.SelectObject(&red);
 				else MemDC.SelectObject(&black);
 				double srcX = currentPos.x + graph.VT(edges[i].src).x * range;
-				double srcY = currentPos.y + graph.VT(edges[i].src).y * range + detla;
+				double srcY = currentPos.y + graph.VT(edges[i].src).y * inv * range + detla;
 				double dstX = currentPos.x + graph.VT(edges[i].dst).x * range;
-				double dstY = currentPos.y + graph.VT(edges[i].dst).y * range + detla;
+				double dstY = currentPos.y + graph.VT(edges[i].dst).y * inv * range + detla;
 				if(edges[i].val>=0)
 				{
 					CString cs(std::to_string(edges[i].val).c_str());
@@ -300,7 +304,7 @@ void CUniversalDemoView::OnDraw(CDC* /*pDC*/)
 					MemDC.SetBkColor(RGB(255, 255, 255));
 				}
 				double Vx = currentPos.x + vertexs[i].x * range;
-				double Vy = currentPos.y + vertexs[i].y * range + detla;
+				double Vy = currentPos.y + vertexs[i].y * inv * range + detla;
 				MemDC.Ellipse(Vx - R/2.0, Vy - R / 2.0, Vx + R / 2.0, Vy + R / 2.0);
 				CString cs(vertexs[i].val);
 				MemDC.TextOut(Vx - R/4.0, Vy - R / 4.0, cs);
@@ -591,6 +595,7 @@ void CUniversalDemoView::preorderToTree()
 {
 	// TODO: 在此加入您的命令處理常式程式碼
 	CInput inputBox;
+	inputBox.InputStr = L"50,40,1,20,45,60,55,90,80,99\\n1,20,40,45,50,55,60,80,90,99";
 	if (inputBox.DoModal() != IDOK) return;
 	display = 0;
 	preorder.clear();
@@ -633,6 +638,7 @@ void CUniversalDemoView::postorderToTree()
 {
 	// TODO: 在此加入您的命令處理常式程式碼
 	CInput inputBox;
+	inputBox.InputStr = L"A,B,C,D,E,F,G,H,I,J\\nB,A,D,C,F,H,J,I,G,E";
 	if (inputBox.DoModal() != IDOK) return;
 	display = 0;
 	preorder.clear();
@@ -892,6 +898,12 @@ void CUniversalDemoView::OnRefresh()
 		}
 	Invalidate();
 }
+void CUniversalDemoView::OnMirror()
+{
+	// TODO: 在此加入您的命令處理常式程式碼
+	mirror = !mirror;
+	Invalidate();
+}
 
 
 string CUniversalDemoView::matrixStrDivide(vector<vector<int>>& best, string letters, int i, int j)
@@ -904,6 +916,7 @@ void CUniversalDemoView::backpack_DP()
 {
 	// TODO: 在此加入您的命令處理常式程式碼
 	CInput inputBox;
+	inputBox.InputStr = L"786";
 	if (inputBox.DoModal() != IDOK) return;
 	vector<SortFmt> sortData;
 	sortData = initialize(inputBox.InputStr, ",", 0);
@@ -955,6 +968,7 @@ void CUniversalDemoView::Matrix_Chain_Production()
 {
 	// TODO: 在此加入您的命令處理常式程式碼
 	CInput inputBox;
+	inputBox.InputStr = L"矩陣名稱：ABCD 矩陣大小：5*10,10*8,8*5,5*11";
 	if (inputBox.DoModal() != IDOK) return;
 	CT2CA toString(inputBox.InputStr);
 	string inputStr(toString);
@@ -1012,6 +1026,7 @@ void CUniversalDemoView::primAlgorithm()
 {
 	// TODO: 在此加入您的命令處理常式程式碼
 	CInput inputBox;
+	inputBox.InputStr = L"代號：ABCDEFG 邊：(A,B,9) (A,C,3) (C,D,6) (B,F,1) (C,F,2) (F,G,4) (F,E,5) (E,G,1) (D,E,1)";
 	if (inputBox.DoModal() != IDOK) return;
 	// init input
 	CT2CA toString(inputBox.InputStr);
@@ -1086,6 +1101,7 @@ void CUniversalDemoView::optimalBST()
 {
 	// TODO: 在此加入您的命令處理常式程式碼
 	CInput inputBox;
+	inputBox.InputStr = L"樹節點：ABCDEFG 頻率：4,2,3,1,5,2,1";
 	if (inputBox.DoModal() != IDOK) return;
 	CT2CA toString(inputBox.InputStr);
 	string inputStr(toString);
@@ -1148,6 +1164,7 @@ void CUniversalDemoView::optimalBST()
 void CUniversalDemoView::OnGraphGrahamscan()
 {
 	CInput inputBox;
+	inputBox.InputStr = L"對位置：(0,3)(1,1)(2,2)(4,4)(0,0)(1,2)(3,1)(3,3)";
 	if (inputBox.DoModal() != IDOK) return;
 	// init input
 	CT2CA toString(inputBox.InputStr);
@@ -1174,12 +1191,26 @@ void CUniversalDemoView::OnGraphGrahamscan()
 	char delimNode[] = ",";
 	vector<Vertexs> vertices;
 	int maxVal = 0;
-	const int scaleGh = 1;
+	const int scaleGh = 10;
 	for (int i = 0; i < nodes.size(); i++)
 	{
 		vector<string> tmp = multiSplit(nodes[i], delimNode);
-		maxVal = max(max(stoi(tmp[1]), stoi(tmp[2])), maxVal);
-		vertices.push_back({ tmp[0][0],stod(tmp[1]) ,stod(tmp[2]),false });
+		if(tmp.size()==3)
+		{
+			maxVal = max(max(stoi(tmp[1]), stoi(tmp[2])), maxVal);
+			vertices.push_back({ tmp[0][0],stod(tmp[1]) ,stod(tmp[2]),false });
+		}
+		else if (tmp.size() == 2)
+		{
+			maxVal = max(max(stoi(tmp[0]), stoi(tmp[1])), maxVal);
+			vertices.push_back({ (char)('A' + i),stod(tmp[0]) ,stod(tmp[1]),false });
+		}
+		else if (tmp.size() == 1)
+		{
+			maxVal = max(max(stoi(nodes[i]), stoi(nodes[i+1])), maxVal);
+			vertices.push_back({ (char)('A' + i),stod(nodes[i]) ,stod(nodes[i+1]),false });
+			i++;
+		}
 	}
 	// init
 	graph = Graph(vertices, 'A');
@@ -1206,8 +1237,7 @@ void CUniversalDemoView::OnGraphGrahamscan()
 	{
 		// Keep removing i while angle of i and i+1 is same
 		// with respect to p0
-		while (i < graph.vertexs.size() - 1 && graph.orientation(graph.vertexs[0], graph.vertexs[i], graph.vertexs[i + 1]) == 0)
-			i++;
+		for (; i < graph.vertexs.size() - 1 && graph.orientation(graph.vertexs[0], graph.vertexs[i], graph.vertexs[i + 1]) == 0; i++);
 		vertices.push_back(graph.vertexs[i]);
 	}
 	if (vertices.size() < 3)
@@ -1234,13 +1264,14 @@ void CUniversalDemoView::OnGraphGrahamscan()
 		graph.edges.push_back({ hull[i - 1].val,hull[i].val,-1 });
 	}
 	graph.edges.push_back({ hull.back().val,hull[0].val,-1});
-	graph.record(scaleGh);
+	graph.record(4);
 	Invalidate();
 }
 void CUniversalDemoView::OnGraphKruskal()
 {
 	// TODO: 在此加入您的命令處理常式程式碼
 	CInput inputBox;
+	inputBox.InputStr = L"代號：ABCDEFG 邊：(A,B,9) (A,C,3) (C,D,6) (B,F,1) (C,F,2) (F,G,4) (F,E,5) (E,G,1) (D,E,1)";
 	if (inputBox.DoModal() != IDOK) return;
 	// init input
 	CT2CA toString(inputBox.InputStr);
@@ -1264,7 +1295,7 @@ void CUniversalDemoView::OnGraphKruskal()
 	inputStr = inputStr.substr(preStr + 2);
 	char delim[] = " ()\n\r";
 	vector<string> nodes = multiSplit(inputStr, delim);
-	char delimNode[] = ",";
+	char delimNode[] = ", ";
 	vector<Edges> edges;
 	for (int i = 0; i < nodes.size(); i++)
 	{
@@ -1296,6 +1327,7 @@ void CUniversalDemoView::OnGraphDijkstra()
 {
 	// TODO: 在此加入您的命令處理常式程式碼
 	CInput inputBox;
+	inputBox.InputStr = L"代號：ABCDEFG 邊：(A,B,9) (A,C,3) (C,D,6) (B,F,1) (C,F,2) (F,G,4) (F,E,5) (E,G,1) (D,E,1)";
 	if (inputBox.DoModal() != IDOK) return;
 	// init input
 	CT2CA toString(inputBox.InputStr);
@@ -1319,7 +1351,7 @@ void CUniversalDemoView::OnGraphDijkstra()
 	inputStr = inputStr.substr(preStr + 2);
 	char delim[] = " ()\n\r";
 	vector<string> nodes = multiSplit(inputStr, delim);
-	char delimNode[] = ",";
+	char delimNode[] = ", ";
 	const int N = letters.length();
 	vector<Edges> edges;
 	vector<vector<int>> matrix(N, vector<int>(N, INF));
@@ -1382,6 +1414,7 @@ void CUniversalDemoView::OnGraphFloydwarshall()
 {
 	// TODO: 在此加入您的命令處理常式程式碼
 	CInput inputBox;
+	inputBox.InputStr = L"代號：ABCDEF 邊：(A,B,1)(A,C,12)(B,C,9)(B,D,3)(C,E,5)(D,C,4)(D,E,13)(D,F,15)(E,F,4)";
 	if (inputBox.DoModal() != IDOK) return;
 	// init input
 	CT2CA toString(inputBox.InputStr);
@@ -1410,7 +1443,7 @@ void CUniversalDemoView::OnGraphFloydwarshall()
 	inputStr = inputStr.substr(preStr + 2);
 	char delim[] = " ()\n\r";
 	vector<string> nodes = multiSplit(inputStr, delim);
-	char delimNode[] = ",";
+	char delimNode[] = ", ";
 	const int N = letters.length();
 	vector<Edges> edges;
 	vector<vector<int>> cost(N, vector<int>(N, INF));
@@ -1490,6 +1523,7 @@ void CUniversalDemoView::OnGraphVoronoidiagram()
 void CUniversalDemoView::OnSortHeapsort()
 {
 	CInput inputBox;
+	inputBox.InputStr = L"E B A D H C G F";
 	if (inputBox.DoModal() != IDOK) return;
 	cover = false;
 	finalData.clear();
@@ -1497,6 +1531,14 @@ void CUniversalDemoView::OnSortHeapsort()
 
 	display = 0;
 	sortData = initialize(inputBox.InputStr, ";");
+	if (sortData.size() == 1 && sortData[0].str.length() > 1)
+	{
+		string tmp="";
+		for (int i = 0; i < sortData[0].str.length(); i++, tmp += ';')
+			tmp += sortData[0].str[i];
+		CString cs(tmp.c_str());
+		sortData = initialize(cs, ";");
+	}
 	const int N = sortData.size();
 	arrToHeapTree(sortData);
 	for (int i = N / 2 - 1; i >= 0; i--)
@@ -1571,3 +1613,4 @@ void CUniversalDemoView::getHeapTreeInorder(vector<SortFmt>& sortData, vector<So
 		getHeapTreeInorder(sortData, res, dst * 2 + 2);
 	return;
 }
+

@@ -34,3 +34,14 @@ END_MESSAGE_MAP()
 
 
 // CInput 訊息處理常式
+
+
+BOOL CInput::OnInitDialog()
+{
+	CDialogEx::OnInitDialog();
+
+	// TODO:  在此加入額外的初始化
+	SetDlgItemText(IDC_EDIT1, InputStr);
+	return TRUE;  // return TRUE unless you set the focus to a control
+	// EXCEPTION: OCX 屬性頁應傳回 FALSE
+}

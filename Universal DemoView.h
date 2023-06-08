@@ -142,10 +142,13 @@ public:
         return mapping[vertex];
     }
     void record(int scale=1) {
+        double maxValue = 0;
+        for (int i = 0; i < vertexs.size(); i++)
+            maxValue = max(maxValue, max(vertexs[i].x, vertexs[i].y));
         for (int i = 0; i < vertexs.size(); i++)
         {
-            vertexs[i].x /= scale;
-            vertexs[i].y /= scale;
+            vertexs[i].x *= scale/maxValue;
+            vertexs[i].y *= scale/maxValue;
         }
         history.push_back({ vertexs, edges });
     }
@@ -851,6 +854,7 @@ public:
     int scale;
     int limitScale;
     double angle;
+    bool mirror;
     vector<SortFmt> preorder;
     vector<SortFmt> inorder;
     vector<SortFmt> postorder;
@@ -906,6 +910,7 @@ public:
     void arrToHeapTree(vector<SortFmt>& arr);
     void getHeapTreePreorder(vector<SortFmt>& sortData, vector<SortFmt>& res, int dst);
     void getHeapTreeInorder(vector<SortFmt>& sortData, vector<SortFmt>& res, int dst);
+    afx_msg void OnMirror();
 };
 
 #ifndef _DEBUG  // 對 Universal DemoView.cpp 中的版本進行偵錯
