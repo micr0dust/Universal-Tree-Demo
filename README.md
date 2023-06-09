@@ -65,6 +65,22 @@
 
 ![Prime's algorithm](https://github.com/micr0dust/Universal-Tree-Demo/blob/main/img/prime.png?raw=true"Prime's-algorithm")
 
-### graph with Prime's algorithm
+### matrix chain multiplication
 
 ![matrix chain multiplication](https://github.com/micr0dust/Universal-Tree-Demo/blob/main/img/mxproduct.png?raw=true"matrix-chain-multiplication")
+
+### Graham scan
+
+![Graham scan](https://github.com/micr0dust/Universal-Tree-Demo/blob/main/img/GrahamScan.png?raw=true"Graham-scan")
+
+### Dijkstra
+
+![Dijkstra](https://github.com/micr0dust/Universal-Tree-Demo/blob/main/img/Dijkstra.jpg?raw=true"Dijkstra")
+
+### Floyd-Warshall
+
+![Floyd-Warshall](https://github.com/micr0dust/Universal-Tree-Demo/blob/main/img/Floyd-Warshall.png?raw=true"Floyd-Warshall")
+
+### Heap sort
+
+![Heap sort](https://github.com/micr0dust/Universal-Tree-Demo/blob/main/img/HeapSort.jpg?raw=true"Heap-sort")
