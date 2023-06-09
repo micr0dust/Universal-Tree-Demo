@@ -23,5 +23,6 @@ protected:
 	DECLARE_MESSAGE_MAP()
 public:
 	CString InputStr;
+	CString title;
 	virtual BOOL OnInitDialog();
 };

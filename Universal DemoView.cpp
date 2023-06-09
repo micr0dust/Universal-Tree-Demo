@@ -282,10 +282,10 @@ void CUniversalDemoView::OnDraw(CDC* /*pDC*/)
 				double dX = vertexs[graph.VTindex(edges[i].dst)].x;
 				double dY = vertexs[graph.VTindex(edges[i].dst)].y;
 
-				double srcX = currentPos.x + vertexs[graph.VTindex(edges[i].src)].x * range;
-				double srcY = currentPos.y + vertexs[graph.VTindex(edges[i].src)].y * inv * range + detla + modfi;
-				double dstX = currentPos.x + vertexs[graph.VTindex(edges[i].dst)].x * range;
-				double dstY = currentPos.y + vertexs[graph.VTindex(edges[i].dst)].y * inv * range + detla + modfi;
+				double srcX = currentPos.x + sX * range;
+				double srcY = currentPos.y + sY * inv * range + detla + modfi;
+				double dstX = currentPos.x + dX * range;
+				double dstY = currentPos.y + dY * inv * range + detla + modfi;
 				if(edges[i].val>=0)
 				{
 					if (digraph)
@@ -295,18 +295,21 @@ void CUniversalDemoView::OnDraw(CDC* /*pDC*/)
 				}
 				MemDC.MoveTo(srcX, srcY);
 				MemDC.LineTo(dstX, dstY);
-				double maxAxis = max(abs(sX - dX), abs(sY - dY));
-				double arrowX = 50*(sX - dX) / maxAxis;
-				double arrowY = 50*(sY - dY) / maxAxis;
-				double len = sqrt(arrowX * arrowX + arrowY * arrowY);
-				arrowX = arrowX/len * R / 2;
-				arrowY = arrowY/len * R / 2;
-				dstX = dstX + arrowX;
-				dstY = dstY + arrowY;
-				MemDC.MoveTo(dstX, dstY);
-				MemDC.LineTo(dstX+arrowX*cos(10.0*DEG)-arrowY*sin(10.0*DEG), dstY+arrowX*sin(10.0*DEG)+arrowY*cos(10.0*DEG));
-				MemDC.MoveTo(dstX, dstY);
-				MemDC.LineTo(dstX+arrowX*cos(-10.0*DEG) - arrowY*sin(-10.0*DEG), dstY+arrowX*sin(-10.0*DEG)+arrowY*cos(-10.0*DEG));
+				if(digraph)
+				{
+					double maxAxis = max(abs(sX - dX), abs(sY - dY));
+					double arrowX = 50 * (sX - dX) / maxAxis;
+					double arrowY = 50 * (sY - dY) / maxAxis;
+					double len = sqrt(arrowX * arrowX + arrowY * arrowY);
+					arrowX = arrowX / len * R / 2;
+					arrowY = arrowY / len * R / 2;
+					dstX = dstX + arrowX;
+					dstY = dstY + arrowY;
+					MemDC.MoveTo(dstX, dstY);
+					MemDC.LineTo(dstX + arrowX * cos(10.0 * DEG) - arrowY * sin(10.0 * DEG), dstY + arrowX * sin(10.0 * DEG) + arrowY * cos(10.0 * DEG));
+					MemDC.MoveTo(dstX, dstY);
+					MemDC.LineTo(dstX + arrowX * cos(-10.0 * DEG) - arrowY * sin(-10.0 * DEG), dstY + arrowX * sin(-10.0 * DEG) + arrowY * cos(-10.0 * DEG));
+				}
 			}
 
 			MemDC.SelectObject(&black);
@@ -331,6 +334,14 @@ void CUniversalDemoView::OnDraw(CDC* /*pDC*/)
 				MemDC.Ellipse(Vx - R/2.0, Vy - R / 2.0, Vx + R / 2.0, Vy + R / 2.0);
 				CString cs(vertexs[i].val);
 				MemDC.TextOut(Vx - R/4.0, Vy - R / 4.0, cs);
+				if(!vertexs[i].str.empty())
+				{
+					MemDC.SelectObject(&unmark);
+					MemDC.SetTextColor(RGB(150, 150, 150));
+					MemDC.SetBkColor(RGB(255, 255, 255));
+					CString cstr(vertexs[i].str.c_str());
+					MemDC.TextOut(Vx - R / 4.0, Vy - R / 4.0 + scale * 4 / 5, cstr);
+				}
 			}
 			MemDC.SelectObject(&unmark);
 			MemDC.SetTextColor(RGB(0, 0, 0));
@@ -789,6 +800,7 @@ void CUniversalDemoView::OnSearch()
 {
 	// TODO: 在此加入您的命令處理常式程式碼
 	CInput inputBox;
+	inputBox.title = L"查找";
 	if (inputBox.DoModal() != IDOK) return;
 	vector<SortFmt> sortData;
 	sortData = initialize(inputBox.InputStr, ",", 0);
@@ -796,10 +808,29 @@ void CUniversalDemoView::OnSearch()
 		Graph queryGraph = Graph(graph);
 		int src = queryGraph.VTindex(sortData[0].str[0]);
 		int dst = queryGraph.VTindex(sortData[1].str[0]);
+		if (src == -1 || dst == -1)
+			return;
 		graph.history.clear();
-		if (restoreFWPath(queryGraph, src, dst) == -1)
-			return graph.record(2);
-		queryGraph.vertexs[dst].mark = true;
+		//if (restoreFWPath(queryGraph, src, dst) == -1)
+		//	return graph.record(2);
+		for (int k;true;)
+		{
+			k = bestResult[src][dst];
+			if (k >= INF)
+			{
+				graph.record(2);
+				return Invalidate();
+			}
+			queryGraph.vertexs[dst].mark = true;
+			char kC = queryGraph.vertexs[k].val;
+			char dstC = queryGraph.vertexs[dst].val;
+			int eg = queryGraph.EGindex(kC, dstC);
+			queryGraph.edges[eg].mark = true;
+			dst = k;
+			if (src == k)
+				break;
+		}
+		queryGraph.vertexs[src].mark = true;
 		graph.record(2, queryGraph.vertexs,queryGraph.edges);
 	}
 	else {
@@ -1064,7 +1095,7 @@ void CUniversalDemoView::primAlgorithm()
 	if (cover)
 		finalResult.clear();
 	display = 6;
-
+	limitScale = 3;
 	vector<string> multinput;
 	char lineDelim[] = " \n";
 	multinput = multiSplit(inputStr, lineDelim);
@@ -1204,6 +1235,7 @@ void CUniversalDemoView::OnGraphGrahamscan()
 	extraText.clear();
 	display = 6;
 	digraph = false;
+	limitScale = 3;
 	vector<string> multinput;
 	char lineDelim[] = " \n";
 	multinput = multiSplit(inputStr, lineDelim);
@@ -1311,6 +1343,7 @@ void CUniversalDemoView::OnGraphKruskal()
 	extraText.clear();
 	display = 6;
 	digraph = false;
+	limitScale = 3;
 	vector<string> multinput;
 	char lineDelim[] = " \n";
 	multinput = multiSplit(inputStr, lineDelim);
@@ -1367,6 +1400,7 @@ void CUniversalDemoView::OnGraphDijkstra()
 	extraText.clear();
 	display = 6;
 	digraph = false;
+	limitScale = 3;
 	vector<string> multinput;
 	char lineDelim[] = " \n";
 	multinput = multiSplit(inputStr, lineDelim);
@@ -1426,7 +1460,9 @@ void CUniversalDemoView::OnGraphDijkstra()
 		}
 		if (source[m]!=m)
 			graph.edges[ mapToEg[source[m]][m] ].mark = true;
-		graph.record();
+		for (int i = 0; i < letters.length(); i++)
+			graph.vertexs[graph.VTindex(letters[i])].str = (dist[i] >= INF ? "INF" : std::to_string(dist[i]));
+		graph.record(2, vector<Vertexs>(), vector<Edges>(),i*2);
 	}
 
 	Invalidate();
@@ -1455,6 +1491,7 @@ void CUniversalDemoView::OnGraphFloydwarshall()
 		extraText.clear();
 	}
 	display = 6;
+	limitScale = 4;
 	//
 	extraText.clear();
 	extraText.push_back(inputStr);
@@ -1507,7 +1544,7 @@ void CUniversalDemoView::OnGraphFloydwarshall()
 				int tmp = cost[i][k] + cost[k][j];
 				if (cost[i][j] > tmp) {
 					cost[i][j] = tmp;
-					best[i][j] = k;
+					best[i][j] = best[k][j];
 				}
 			}
 	bestResult = best;
@@ -1550,7 +1587,59 @@ void CUniversalDemoView::OnGraphFloydwarshall()
 }
 void CUniversalDemoView::OnGraphVoronoidiagram()
 {
-	// TODO: 在此加入您的命令處理常式程式碼
+	return;
+	CInput inputBox;
+	inputBox.InputStr = L"對位置：(0,3)(1,1)(2,2)(4,4)(0,0)(1,2)(3,1)(3,3)";
+	if (inputBox.DoModal() != IDOK) return;
+	// init input
+	CT2CA toString(inputBox.InputStr);
+	string inputStr(toString);
+	if (cover)
+		finalResult.clear();
+	extraText.clear();
+	display = 6;
+	digraph = false;
+	limitScale = 3;
+	vector<string> multinput;
+	char lineDelim[] = " \n";
+	multinput = multiSplit(inputStr, lineDelim);
+	for (int i = 0; i < multinput.size(); i++)
+		finalResult.push_back(multinput[i]);
+	//int preStr = inputStr.find("：");
+	//inputStr = inputStr.substr(preStr + 2);
+
+	//char spaceDelim[] = " ";
+	//string letters = multiSplit(inputStr, spaceDelim)[0];
+	int preStr = inputStr.find("：");
+	inputStr = inputStr.substr(preStr + 2);
+	char delim[] = " ()\n\r";
+	vector<string> nodes = multiSplit(inputStr, delim);
+	char delimNode[] = ",";
+	vector<Vertexs> vertices;
+	int maxVal = 0;
+	const int scaleGh = 10;
+	for (int i = 0; i < nodes.size(); i++)
+	{
+		vector<string> tmp = multiSplit(nodes[i], delimNode);
+		if (tmp.size() == 3)
+		{
+			maxVal = max(max(stoi(tmp[1]), stoi(tmp[2])), maxVal);
+			vertices.push_back({ tmp[0][0],stod(tmp[1]) ,stod(tmp[2]),false });
+		}
+		else if (tmp.size() == 2)
+		{
+			maxVal = max(max(stoi(tmp[0]), stoi(tmp[1])), maxVal);
+			vertices.push_back({ (char)('A' + i),stod(tmp[0]) ,stod(tmp[1]),false });
+		}
+		else if (tmp.size() == 1)
+		{
+			maxVal = max(max(stoi(nodes[i]), stoi(nodes[i + 1])), maxVal);
+			vertices.push_back({ (char)('A' + i),stod(nodes[i]) ,stod(nodes[i + 1]),false });
+			i++;
+		}
+	}
+	// init
+	Diagram voronoi = Diagram(vertices,1000);
 
 }
 void CUniversalDemoView::OnSortHeapsort()

@@ -13,11 +13,19 @@ using std::string;
 constexpr auto PI = 3.14159265359;
 constexpr auto DEG = 3.14159265359/180;
 
+struct Line
+{
+    double x1, y1;
+    double x2, y2;
+    int ownerA, ownerB;
+    bool mark;
+};
 struct Vertexs
 {
     char val;
     double x, y;
     bool mark;
+    string str;
 };
 struct Edges
 {
@@ -54,6 +62,49 @@ struct Node4
 	Node4* M4;
 	int num;
 	Node4* parent;
+};
+class Diagram {
+    vector<Line> lines;
+    vector<Vertexs> vertices;
+    double border;
+public:
+    Diagram(vector<Vertexs> vertex, vector<Line>& line, double limit)
+    {
+        vertices = vertex;
+        lines = line;
+        border = limit;
+    }
+    Diagram(vector<Vertexs>& vertices, double limit)
+    {
+        vertices = vertices;
+        border = limit;
+    }
+    Line Diagram::toLine(Vertexs src, Vertexs vetor) {
+        double sX = src.x;
+        double sY = src.y;
+        double vX = vetor.x;
+        double vY = vetor.y;
+        double len = sqrt(vX * vX + vY * vY);
+        vX /= len; vY /= len;
+        double limRD = min((border - sX) / vX, (border - sY) / vY) / vX;
+        double limLT = min((sX - border) / vX, (sY - border) / vY) / vX;
+        Line line = { sX + vX * limRD,sY + vY * limRD,sX + vX * limLT,sY + vY * limLT };
+        return line;
+    }
+    Line Diagram::perpendicular(Vertexs a, Vertexs b)
+    {
+        // ab中點。
+        Vertexs c = {'.',a.x+b.x,a.y+b.y};
+
+        // ab向量，顛倒、變號，得到法向量。
+        Vertexs s = { '.',b.x - a.x,b.y - a.y };
+        std::swap(s.x, s.y);
+        s.x *= -1;
+
+        // 中垂線。兩點得一線。
+        Line res = { c.x,c.y, c.x + s.x, c.y + s.y };
+        return res;
+    }
 };
 class DSU {
     int* parent;
@@ -148,7 +199,8 @@ public:
     }
     void record(int scale=1
         ,vector<Vertexs>& vt = vector<Vertexs>()
-        ,vector<Edges>& eg = vector<Edges>()) {
+        ,vector<Edges>& eg = vector<Edges>()
+        ,int interval=0) {
         if (vt.empty())
             vt = vertexs;
         if (eg.empty())
@@ -158,8 +210,8 @@ public:
             maxValue = max(maxValue, max(vt[i].x, vt[i].y));
         for (int i = 0; i < vt.size(); i++)
         {
-            vt[i].x *= scale/maxValue;
-            vt[i].y *= scale/maxValue;
+            vt[i].x = vt[i].x*scale/maxValue;
+            vt[i].y = vt[i].y*scale/maxValue+ interval;
         }
         history.push_back({ vt, eg });
     }

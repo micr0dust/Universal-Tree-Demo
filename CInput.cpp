@@ -42,6 +42,7 @@ BOOL CInput::OnInitDialog()
 
 	// TODO:  在此加入額外的初始化
 	SetDlgItemText(IDC_EDIT1, InputStr);
+	SetWindowText(title);
 	return TRUE;  // return TRUE unless you set the focus to a control
 	// EXCEPTION: OCX 屬性頁應傳回 FALSE
 }
