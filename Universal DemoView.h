@@ -968,7 +968,7 @@ public:
     afx_msg void OnGraphKruskal();
     afx_msg void OnGraphDijkstra();
     int miniDist(vector<int>& dist, vector<bool>& visited);
-    afx_msg void OnGraphFloydwarshall();
+    //afx_msg void OnGraphFloydwarshall();
     afx_msg void OnGraphVoronoidiagram();
     afx_msg void OnSortHeapsort();
     void heapify(vector<SortFmt>& arr, int n, int i);
@@ -976,6 +976,8 @@ public:
     void getHeapTreePreorder(vector<SortFmt>& sortData, vector<SortFmt>& res, int dst);
     void getHeapTreeInorder(vector<SortFmt>& sortData, vector<SortFmt>& res, int dst);
     afx_msg void OnMirror();
+    afx_msg void OnFloydwarshallGraph();
+    afx_msg void OnFloydwarshallDiagraph();
     int restoreFWPath(Graph& queryGraph, int src, int dst);
 };
 
